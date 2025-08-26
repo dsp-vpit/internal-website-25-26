@@ -8,11 +8,15 @@ import './globals.css';
 function NavBar() {
   const { user, loading } = useUser();
   return (
-    <nav style={{ display: 'flex', gap: 16, padding: 16, borderBottom: '1px solid #ccc' }}>
-      <Link href="/dashboard">Dashboard</Link>
-      {user?.is_admin && <Link href="/admin">Admin</Link>}
-      {user && <Link href="/logout">Logout</Link>}
-      {!user && !loading && <Link href="/auth">Login</Link>}
+    <nav className="navbar">
+      <div className="brand">BK Member Site</div>
+      <div className="row-m">
+        <Link href="/dashboard" className="btn btn-ghost">Dashboard</Link>
+        {user && <Link href="/voting" className="btn btn-ghost">Voting</Link>}
+        {user?.is_admin && <Link href="/admin" className="btn btn-ghost">Admin</Link>}
+        {user && <Link href="/logout" className="btn btn-danger">Logout</Link>}
+        {!user && !loading && <Link href="/auth" className="btn btn-primary">Login</Link>}
+      </div>
     </nav>
   );
 }
@@ -20,12 +24,14 @@ function NavBar() {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>
+      <body className="shell">
         <UserProvider>
           <NavBar />
-          <main>{children}</main>
+          <main className="container">
+            {children}
+          </main>
         </UserProvider>
       </body>
     </html>
   );
-} 
+}

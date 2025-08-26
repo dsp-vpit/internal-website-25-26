@@ -166,77 +166,179 @@ export default function AdminPage() {
   if (loading || !user || !user.is_admin) return null;
 
   return (
-    <div style={{ padding: 32 }}>
-      <h1>Admin Dashboard</h1>
-      <div style={{ marginTop: 24, display: 'flex', gap: 16 }}>
-        <button onClick={() => alert('Results viewing coming soon!')}>View Results</button>
-        <button onClick={() => router.push('/dashboard')}>Return to Dashboard</button>
-      </div>
-      <h2 style={{ marginTop: 40 }}>Pending User Approvals</h2>
-      {loadingUsers ? (
-        <p>Loading users...</p>
-      ) : pendingUsers.length === 0 ? (
-        <p>No users pending approval.</p>
-      ) : (
-        <ul style={{ marginTop: 16 }}>
-          {pendingUsers.map(u => (
-            <li key={u.id} style={{ marginBottom: 8 }}>
-              {u.email}
-              <button
-                style={{ marginLeft: 16 }}
-                onClick={() => approveUser(u.id)}
-                disabled={approving === u.id}
-              >
-                {approving === u.id ? 'Approving...' : 'Approve'}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      <h2 style={{ marginTop: 40 }}>Current Event & Candidate</h2>
-      {currentEvent && currentCandidate ? (
-        <div style={{ marginBottom: 16 }}>
-          <div><b>Event Type:</b> {currentEvent.type}</div>
-          <div><b>Date:</b> {currentEvent.date}</div>
-          <div><b>Phase:</b> {currentEvent.phase || 'opinion'}</div>
-          <button style={{ marginTop: 8, marginBottom: 8 }} onClick={handleTogglePhase} disabled={togglingPhase}>
-            {togglingPhase ? 'Switching...' : `Switch to ${currentEvent.phase === 'opinion' ? 'Final Vote' : 'Opinion Poll'}`}
+    <div className="stack-l">
+      {/* Header */}
+      <div className="card" style={{ padding: '1.5rem' }}>
+        <div className="title" style={{ marginBottom: '1rem' }}>Admin Dashboard</div>
+        <div className="row-m">
+          <button 
+            className="btn btn-ghost" 
+            onClick={() => alert('Results viewing coming soon!')}
+          >
+            View Results
           </button>
-          <div style={{ marginTop: 8 }}>
-            <b>Current Candidate:</b> {currentCandidate.name}
-            {currentCandidate.major && <span> | Major: {currentCandidate.major}</span>}
-            {currentCandidate.grad_year && <span> | Grad Year: {currentCandidate.grad_year}</span>}
-            {currentCandidate.gpa && <span> | GPA: {currentCandidate.gpa}</span>}
-            {currentCandidate.position && <span> | Position: {currentCandidate.position}</span>}
-          </div>
-          <button style={{ marginTop: 12 }} onClick={handleNextCandidate} disabled={advancing}>
-            {advancing ? 'Advancing...' : 'Next Candidate'}
+          <button 
+            className="btn btn-ghost" 
+            onClick={() => router.push('/dashboard')}
+          >
+            Return to Dashboard
           </button>
         </div>
-      ) : (
-        <div>No current event or candidate.</div>
-      )}
-      <h2 style={{ marginTop: 40 }}>Upload Event & Candidates</h2>
-      <textarea
-        value={jsonInput}
-        onChange={e => setJsonInput(e.target.value)}
-        placeholder='Paste event/candidate JSON here'
-        rows={10}
-        style={{ width: '100%', marginBottom: 8 }}
-      />
-      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-        <button onClick={handleParseJson}>Preview</button>
-        <button onClick={handleUpload} disabled={!parsedData || uploading}>
-          {uploading ? 'Uploading...' : 'Create Event'}
-        </button>
       </div>
-      {parseError && <div style={{ color: 'red' }}>{parseError}</div>}
-      {parsedData && (
-        <pre style={{ background: '#222', color: '#fff', padding: 8, borderRadius: 4 }}>
-          {JSON.stringify(parsedData, null, 2)}
-        </pre>
-      )}
-      {uploadResult && <div style={{ color: uploadResult.startsWith('Upload failed') ? 'red' : 'green', marginTop: 8 }}>{uploadResult}</div>}
+
+      {/* Pending User Approvals */}
+      <div className="card" style={{ padding: '1.5rem' }}>
+        <div className="title" style={{ marginBottom: '1rem' }}>Pending User Approvals</div>
+        {loadingUsers ? (
+          <p style={{ color: 'var(--muted)' }}>Loading users...</p>
+        ) : pendingUsers.length === 0 ? (
+          <p style={{ color: 'var(--muted)' }}>No users pending approval.</p>
+        ) : (
+          <div className="stack-m">
+            {pendingUsers.map(u => (
+              <div key={u.id} className="row-m" style={{ 
+                alignItems: 'center', 
+                padding: '0.75rem', 
+                background: 'var(--bg-elev)', 
+                border: '1px solid var(--border)' 
+              }}>
+                <span style={{ flex: 1 }}>{u.email}</span>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => approveUser(u.id)}
+                  disabled={approving === u.id}
+                >
+                  {approving === u.id ? 'Approving...' : 'Approve'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Current Event & Candidate */}
+      <div className="card" style={{ padding: '1.5rem' }}>
+        <div className="title" style={{ marginBottom: '1rem' }}>Current Event & Candidate</div>
+        {currentEvent && currentCandidate ? (
+          <div className="stack-m">
+            <div className="row-m" style={{ color: 'var(--muted)' }}>
+              <span className="mono">Event: {currentEvent.type}</span>
+              <span className="mono">Date: {new Date(currentEvent.date).toLocaleDateString()}</span>
+              <span className="mono">Phase: {currentEvent.phase || 'opinion'}</span>
+            </div>
+            
+            <button 
+              className="btn btn-ghost" 
+              onClick={handleTogglePhase} 
+              disabled={togglingPhase}
+              style={{ alignSelf: 'flex-start' }}
+            >
+              {togglingPhase ? 'Switching...' : `Switch to ${currentEvent.phase === 'opinion' ? 'Final Vote' : 'Opinion Poll'}`}
+            </button>
+            
+            <div className="card" style={{ padding: '1rem', background: 'var(--bg-elev)' }}>
+              <div className="title" style={{ marginBottom: '0.75rem', fontSize: '1.25rem' }}>
+                {currentCandidate.name}
+              </div>
+              <div className="stack-m">
+                {currentCandidate.major && (
+                  <div className="row-m">
+                    <span style={{ color: 'var(--muted)', minWidth: '100px' }}>Major:</span>
+                    <span>{currentCandidate.major}</span>
+                  </div>
+                )}
+                {currentCandidate.grad_year && (
+                  <div className="row-m">
+                    <span style={{ color: 'var(--muted)', minWidth: '100px' }}>Grad Year:</span>
+                    <span>{currentCandidate.grad_year}</span>
+                  </div>
+                )}
+                {currentCandidate.gpa && (
+                  <div className="row-m">
+                    <span style={{ color: 'var(--muted)', minWidth: '100px' }}>GPA:</span>
+                    <span>{currentCandidate.gpa}</span>
+                  </div>
+                )}
+                {currentCandidate.position && (
+                  <div className="row-m">
+                    <span style={{ color: 'var(--muted)', minWidth: '100px' }}>Position:</span>
+                    <span>{currentCandidate.position}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <button 
+              className="btn btn-primary" 
+              onClick={handleNextCandidate} 
+              disabled={advancing}
+              style={{ alignSelf: 'flex-start' }}
+            >
+              {advancing ? 'Advancing...' : 'Next Candidate'}
+            </button>
+          </div>
+        ) : (
+          <p style={{ color: 'var(--muted)' }}>No current event or candidate.</p>
+        )}
+      </div>
+
+      {/* Upload Event & Candidates */}
+      <div className="card" style={{ padding: '1.5rem' }}>
+        <div className="title" style={{ marginBottom: '1rem' }}>Upload Event & Candidates</div>
+        <div className="stack-m">
+          <textarea
+            value={jsonInput}
+            onChange={e => setJsonInput(e.target.value)}
+            placeholder='Paste event/candidate JSON here'
+            rows={10}
+            className="input"
+            style={{ fontFamily: 'monospace', resize: 'vertical' }}
+          />
+          
+          <div className="row-m">
+            <button className="btn btn-ghost" onClick={handleParseJson}>
+              Preview
+            </button>
+            <button 
+              className="btn btn-primary" 
+              onClick={handleUpload} 
+              disabled={!parsedData || uploading}
+            >
+              {uploading ? 'Uploading...' : 'Create Event'}
+            </button>
+          </div>
+          
+          {parseError && (
+            <div style={{ color: 'var(--danger)', padding: '0.75rem', background: 'rgba(239,68,68,0.1)', border: '1px solid var(--danger)' }}>
+              {parseError}
+            </div>
+          )}
+          
+          {parsedData && (
+            <div className="mono" style={{ 
+              background: 'var(--bg-elev)', 
+              padding: '1rem', 
+              border: '1px solid var(--border)',
+              fontSize: '0.9rem',
+              overflow: 'auto',
+              maxHeight: '300px'
+            }}>
+              <pre style={{ margin: 0 }}>{JSON.stringify(parsedData, null, 2)}</pre>
+            </div>
+          )}
+          
+          {uploadResult && (
+            <div style={{ 
+              color: uploadResult.startsWith('Upload failed') ? 'var(--danger)' : 'var(--brand)',
+              padding: '0.75rem',
+              background: uploadResult.startsWith('Upload failed') ? 'rgba(239,68,68,0.1)' : 'rgba(139,92,246,0.1)',
+              border: `1px solid ${uploadResult.startsWith('Upload failed') ? 'var(--danger)' : 'var(--brand)'}`
+            }}>
+              {uploadResult}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
-} 
+}

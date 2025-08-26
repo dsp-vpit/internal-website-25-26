@@ -17,22 +17,25 @@ export default function DashboardPage() {
   if (loading || !user) return null;
 
   return (
-    <div style={{ padding: 32 }}>
-      <h1>Welcome, {user.email}!</h1>
-      {!user.is_approved && (
-        <div style={{ color: 'orange', marginBottom: 16 }}>
-          Your account is not yet approved. Some features may be unavailable.
+    <div className="stack-l">
+      <div className="card" style={{ padding: '1.5rem' }}>
+        <h1 className="title" style={{ marginBottom: '0.75rem' }}>Welcome, {user.email}!</h1>
+        {!user.is_approved && (
+          <div className="card" style={{ padding: '0.75rem', borderColor: 'var(--border)', color: 'var(--muted)' }}>
+            Your account is not yet approved. Some features may be unavailable.
+          </div>
+        )}
+        <div className="row-m" style={{ marginTop: '1rem' }}>
+          <span>Status: <b>{user.is_approved ? 'Approved' : 'Pending Approval'}</b></span>
+          <span>Role: <b>{user.is_admin ? 'Admin' : 'Member'}</b></span>
         </div>
-      )}
-      <p>Status: <b>{user.is_approved ? 'Approved' : 'Pending Approval'}</b></p>
-      <p>Role: <b>{user.is_admin ? 'Admin' : 'Member'}</b></p>
-      <div style={{ marginTop: 24, display: 'flex', gap: 16 }}>
-        <button onClick={() => router.push('/voting')}>Go to Voting</button>
-        <button onClick={() => alert('Results functionality coming soon!')}>Go to Results</button>
+      </div>
+      <div className="row-m">
+        <button className="btn btn-ghost" onClick={() => alert('Results coming soon!')}>Go to Results</button>
         {user.is_admin && (
-          <button onClick={() => router.push('/admin')}>Go to Admin Dashboard</button>
+          <button className="btn btn-ghost" onClick={() => router.push('/admin')}>Go to Admin Dashboard</button>
         )}
       </div>
     </div>
   );
-} 
+}
