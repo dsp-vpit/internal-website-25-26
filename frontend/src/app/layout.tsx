@@ -13,6 +13,7 @@ function NavBar() {
       <div className="row-m">
         <Link href="/dashboard" className="btn btn-ghost">Dashboard</Link>
         {user && <Link href="/voting" className="btn btn-ghost">Voting</Link>}
+        {user && <Link href="/results" className="btn btn-ghost">Results</Link>}
         {user?.is_admin && <Link href="/admin" className="btn btn-ghost">Admin</Link>}
         {user && <Link href="/logout" className="btn btn-danger">Logout</Link>}
         {!user && !loading && <Link href="/auth" className="btn btn-primary">Login</Link>}

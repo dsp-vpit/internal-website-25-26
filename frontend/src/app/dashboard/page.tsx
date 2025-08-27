@@ -31,7 +31,7 @@ export default function DashboardPage() {
         </div>
       </div>
       <div className="row-m">
-        <button className="btn btn-ghost" onClick={() => alert('Results coming soon!')}>Go to Results</button>
+        <button className="btn btn-ghost" onClick={() => router.push('/results')}>Go to Results</button>
         {user.is_admin && (
           <button className="btn btn-ghost" onClick={() => router.push('/admin')}>Go to Admin Dashboard</button>
         )}

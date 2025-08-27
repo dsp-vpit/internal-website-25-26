@@ -148,6 +148,27 @@ export default function AdminPage() {
     setAdvancing(false);
   };
 
+  // Go to previous candidate
+  const handlePreviousCandidate = async () => {
+    if (!currentEvent || !candidates.length) return;
+    setAdvancing(true);
+    const prevIndex = currentEvent.current_candidate_index - 1;
+    if (prevIndex < 0) {
+      setAdvancing(false);
+      alert('Already at the first candidate.');
+      return;
+    }
+    const { error } = await supabase
+      .from('events')
+      .update({ current_candidate_index: prevIndex })
+      .eq('id', currentEvent.id);
+    if (!error) {
+      setCurrentEvent({ ...currentEvent, current_candidate_index: prevIndex });
+      setCurrentCandidate(candidates[prevIndex]);
+    }
+    setAdvancing(false);
+  };
+
   // Toggle voting phase
   const handleTogglePhase = async () => {
     if (!currentEvent) return;
@@ -173,7 +194,7 @@ export default function AdminPage() {
         <div className="row-m">
           <button 
             className="btn btn-ghost" 
-            onClick={() => alert('Results viewing coming soon!')}
+            onClick={() => router.push('/results')}
           >
             View Results
           </button>
@@ -268,14 +289,23 @@ export default function AdminPage() {
               </div>
             </div>
             
-            <button 
-              className="btn btn-primary" 
-              onClick={handleNextCandidate} 
-              disabled={advancing}
-              style={{ alignSelf: 'flex-start' }}
-            >
-              {advancing ? 'Advancing...' : 'Next Candidate'}
-            </button>
+            <div className="row-m" style={{ gap: '1rem' }}>
+              <button 
+                className="btn btn-ghost" 
+                onClick={handlePreviousCandidate} 
+                disabled={advancing || (currentEvent.current_candidate_index <= 0)}
+              >
+                {advancing ? 'Moving...' : 'Previous Candidate'}
+              </button>
+              
+              <button 
+                className="btn btn-primary" 
+                onClick={handleNextCandidate} 
+                disabled={advancing}
+              >
+                {advancing ? 'Advancing...' : 'Next Candidate'}
+              </button>
+            </div>
           </div>
         ) : (
           <p style={{ color: 'var(--muted)' }}>No current event or candidate.</p>
