@@ -47,7 +47,10 @@ export default function AdminPage() {
 
   const approveUser = async (id: string) => {
     setApproving(id);
-    await supabase.from('profiles').update({ is_approved: true }).eq('id', id);
+    await supabase.from('profiles').update({ 
+      is_approved: true,
+      can_vote: true 
+    }).eq('id', id);
     setPendingUsers(pendingUsers.filter(u => u.id !== id));
     setApproving(null);
   };
