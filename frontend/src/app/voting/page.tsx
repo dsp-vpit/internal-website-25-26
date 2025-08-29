@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useUser } from '../context/UserContext';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -25,7 +25,13 @@ export default function VotingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Auto-refresh state
+  const [lastEventId, setLastEventId] = useState<string | null>(null);
+  const [lastCandidateIndex, setLastCandidateIndex] = useState<number | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Fetch current event, candidate, and phase
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -75,6 +81,10 @@ export default function VotingPage() {
         }
         
         setCandidate(currentCandidate);
+        
+        // Update tracking variables for auto-refresh
+        setLastEventId(eventData.id);
+        setLastCandidateIndex(eventData.current_candidate_index);
       } catch (err) {
         console.error('Unexpected error:', err);
         setError('An unexpected error occurred');
@@ -83,7 +93,48 @@ export default function VotingPage() {
     
     fetchData();
   }, []);
-  
+
+  // Auto-refresh mechanism - check for updates every 3 seconds
+  useEffect(() => {
+    if (!user || !event) return;
+
+    const checkForUpdates = async () => {
+      try {
+        const { data: eventData, error: eventError } = await supabase
+          .from('events')
+          .select('*')
+          .eq('id', event.id)
+          .single();
+
+        if (!eventError && eventData) {
+          // Check if candidate index has changed
+          if (eventData.current_candidate_index !== lastCandidateIndex) {
+            console.log('Candidate changed, refreshing...');
+            window.location.reload();
+          }
+          
+          // Check if phase has changed
+          if (eventData.phase !== phase) {
+            console.log('Phase changed, refreshing...');
+            window.location.reload();
+          }
+        }
+      } catch (err) {
+        console.error('Error checking for updates:', err);
+      }
+    };
+
+    // Set up interval to check for updates every 3 seconds
+    intervalRef.current = setInterval(checkForUpdates, 3000);
+
+    // Cleanup interval on unmount or when dependencies change
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [user, event, lastCandidateIndex, phase]);
+
   // Check if user has already voted for this candidate/phase
   useEffect(() => {
     const checkVote = async () => {
