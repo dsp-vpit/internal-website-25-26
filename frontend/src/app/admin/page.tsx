@@ -107,30 +107,36 @@ export default function AdminPage() {
     setUploading(false);
   };
 
-  // Fetch current event and candidates
-  useEffect(() => {
-    const fetchEventAndCandidates = async () => {
-      const { data: eventData, error: eventError } = await supabase
-        .from('events')
-        .select('*')
-        .order('date', { ascending: false })
-        .limit(1)
-        .single();
-      if (!eventError && eventData) {
-        setCurrentEvent(eventData);
-        const { data: candData, error: candError } = await supabase
-          .from('candidates')
+    // Fetch current event and candidates
+    useEffect(() => {
+      const fetchEventAndCandidates = async () => {
+        const { data: eventData, error: eventError } = await supabase
+          .from('events')
           .select('*')
-          .eq('event_id', eventData.id)
-          .order('id', { ascending: true });
-        if (!candError && candData) {
-          setCandidates(candData);
-          setCurrentCandidate(candData[eventData.current_candidate_index] || null);
+          .eq('is_ended', false)  // Only get non-ended events
+          .order('date', { ascending: false })
+          .limit(1)
+          .single();
+        if (!eventError && eventData) {
+          setCurrentEvent(eventData);
+          const { data: candData, error: candError } = await supabase
+            .from('candidates')
+            .select('*')
+            .eq('event_id', eventData.id)
+            .order('id', { ascending: true });
+          if (!candError && candData) {
+            setCandidates(candData);
+            setCurrentCandidate(candData[eventData.current_candidate_index] || null);
+          }
+        } else {
+          // No active event found
+          setCurrentEvent(null);
+          setCandidates([]);
+          setCurrentCandidate(null);
         }
-      }
-    };
-    fetchEventAndCandidates();
-  }, [uploadResult]); // refetch after upload
+      };
+      fetchEventAndCandidates();
+    }, [uploadResult]); // refetch after upload
 
   // Fetch past events
   useEffect(() => {

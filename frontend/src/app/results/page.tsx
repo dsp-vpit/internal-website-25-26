@@ -75,6 +75,7 @@ export default function ResultsPage() {
         const { data: eventData, error: eventError } = await supabase
           .from('events')
           .select('*')
+          .eq('is_ended', false)  // Only get non-ended events
           .order('date', { ascending: false })
           .limit(1)
           .single();
@@ -89,7 +90,7 @@ export default function ResultsPage() {
           setError('No active event found');
           return;
         }
-
+        
         setEvent(eventData);
         setApprovalThreshold(eventData.approval_threshold || 85);
 

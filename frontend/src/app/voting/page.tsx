@@ -26,13 +26,13 @@ export default function VotingPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch current event, candidate, and phase
   useEffect(() => {
     const fetchData = async () => {
       try {
         const { data: eventData, error: eventError } = await supabase
           .from('events')
           .select('*')
+          .eq('is_ended', false)  // Only get non-ended events
           .order('date', { ascending: false })
           .limit(1)
           .single();
@@ -44,13 +44,7 @@ export default function VotingPage() {
         }
         
         if (!eventData) {
-          setError('No active event found');
-          return;
-        }
-
-        // Check if event is ended
-        if (eventData.is_ended) {
-          setError('No active voting event available. The current event has ended.');
+          setError('No active voting event available.');
           return;
         }
 
@@ -89,7 +83,7 @@ export default function VotingPage() {
     
     fetchData();
   }, []);
-
+  
   // Check if user has already voted for this candidate/phase
   useEffect(() => {
     const checkVote = async () => {
