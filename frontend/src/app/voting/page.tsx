@@ -107,16 +107,42 @@ export default function VotingPage() {
           .single();
 
         if (!eventError && eventData) {
+          let needsUpdate = false;
+          
           // Check if candidate index has changed
           if (eventData.current_candidate_index !== lastCandidateIndex) {
-            console.log('Candidate changed, refreshing...');
-            window.location.reload();
+            console.log('Candidate changed, updating...');
+            needsUpdate = true;
           }
           
           // Check if phase has changed
           if (eventData.phase !== phase) {
-            console.log('Phase changed, refreshing...');
-            window.location.reload();
+            console.log('Phase changed, updating...');
+            needsUpdate = true;
+          }
+
+          // If changes detected, fetch fresh data
+          if (needsUpdate) {
+            // Fetch updated candidates
+            const { data: candData, error: candError } = await supabase
+              .from('candidates')
+              .select('*')
+              .eq('event_id', eventData.id)
+              .order('id', { ascending: true });
+            
+            if (!candError && candData && candData.length > 0) {
+              const newCurrentCandidate = candData[eventData.current_candidate_index] || null;
+              if (newCurrentCandidate) {
+                setEvent(eventData);
+                setPhase(eventData.phase || 'opinion');
+                setCandidate(newCurrentCandidate);
+                setLastCandidateIndex(eventData.current_candidate_index);
+                setHasVoted(false); // Reset vote status for new candidate
+                setMessage(null);
+                setError(null);
+                console.log('Updated to candidate:', newCurrentCandidate.name);
+              }
+            }
           }
         }
       } catch (err) {
