@@ -25,6 +25,8 @@ export default function AdminPage() {
   const [advancing, setAdvancing] = useState(false);
 
   const [togglingPhase, setTogglingPhase] = useState(false);
+  const [endingEvent, setEndingEvent] = useState(false);
+  const [pastEvents, setPastEvents] = useState<any[]>([]);
 
   useEffect(() => {
     if (!loading && (!user || !user.is_admin)) {
@@ -130,6 +132,21 @@ export default function AdminPage() {
     fetchEventAndCandidates();
   }, [uploadResult]); // refetch after upload
 
+  // Fetch past events
+  useEffect(() => {
+    const fetchPastEvents = async () => {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .eq('is_ended', true)
+        .order('date', { ascending: false });
+      if (!error && data) {
+        setPastEvents(data);
+      }
+    };
+    if (user && user.is_admin) fetchPastEvents();
+  }, [user, currentEvent?.is_ended]); // refetch when current event status changes
+
   // Advance to next candidate
   const handleNextCandidate = async () => {
     if (!currentEvent || !candidates.length) return;
@@ -185,6 +202,35 @@ export default function AdminPage() {
       setCurrentEvent({ ...currentEvent, phase: newPhase });
     }
     setTogglingPhase(false);
+  };
+
+  // End current event
+  const handleEndEvent = async () => {
+    if (!currentEvent) return;
+    
+    const confirmEnd = window.confirm(
+      `Are you sure you want to end the "${currentEvent.type}" event? This will:\n\n` +
+      `• Remove all candidates from the voting page\n` +
+      `• Prevent further voting on this event\n` +
+      `• Keep all data accessible in admin dashboard\n\n` +
+      `This action cannot be undone.`
+    );
+    
+    if (!confirmEnd) return;
+    
+    setEndingEvent(true);
+    const { error } = await supabase
+      .from('events')
+      .update({ is_ended: true })
+      .eq('id', currentEvent.id);
+    
+    if (!error) {
+      setCurrentEvent({ ...currentEvent, is_ended: true });
+      alert('Event ended successfully! Candidates are no longer visible on the voting page.');
+    } else {
+      alert('Failed to end event: ' + error.message);
+    }
+    setEndingEvent(false);
   };
 
   if (loading || !user || !user.is_admin) return null;
@@ -249,16 +295,32 @@ export default function AdminPage() {
               <span className="mono">Event: {currentEvent.type}</span>
               <span className="mono">Date: {new Date(currentEvent.date).toLocaleDateString()}</span>
               <span className="mono">Phase: {currentEvent.phase || 'opinion'}</span>
+              {currentEvent.is_ended && (
+                <span className="mono" style={{ color: 'var(--danger)' }}>• ENDED</span>
+              )}
             </div>
             
-            <button 
-              className="btn btn-ghost" 
-              onClick={handleTogglePhase} 
-              disabled={togglingPhase}
-              style={{ alignSelf: 'flex-start' }}
-            >
-              {togglingPhase ? 'Switching...' : `Switch to ${currentEvent.phase === 'opinion' ? 'Final Vote' : 'Opinion Poll'}`}
-            </button>
+            <div className="row-m" style={{ gap: '1rem' }}>
+              <button 
+                className="btn btn-ghost" 
+                onClick={handleTogglePhase} 
+                disabled={togglingPhase || currentEvent.is_ended}
+                style={{ alignSelf: 'flex-start' }}
+              >
+                {togglingPhase ? 'Switching...' : `Switch to ${currentEvent.phase === 'opinion' ? 'Final Vote' : 'Opinion Poll'}`}
+              </button>
+              
+              {!currentEvent.is_ended && (
+                <button 
+                  className="btn btn-danger" 
+                  onClick={handleEndEvent} 
+                  disabled={endingEvent}
+                  style={{ alignSelf: 'flex-start' }}
+                >
+                  {endingEvent ? 'Ending...' : 'End Event'}
+                </button>
+              )}
+            </div>
             
             <div className="card" style={{ padding: '1rem', background: 'var(--bg-elev)' }}>
               <div className="title" style={{ marginBottom: '0.75rem', fontSize: '1.25rem' }}>
@@ -314,6 +376,33 @@ export default function AdminPage() {
           <p style={{ color: 'var(--muted)' }}>No current event or candidate.</p>
         )}
       </div>
+
+      {/* Past Events */}
+      {pastEvents.length > 0 && (
+        <div className="card" style={{ padding: '1.5rem' }}>
+          <div className="title" style={{ marginBottom: '1rem' }}>Past Events</div>
+          <div className="stack-m">
+            {pastEvents.map(event => (
+              <div key={event.id} className="card" style={{ 
+                padding: '1rem', 
+                background: 'var(--bg-elev)',
+                borderColor: 'var(--danger)',
+                opacity: 0.8
+              }}>
+                <div className="row-m" style={{ alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <span className="title" style={{ fontSize: '1.1rem' }}>{event.type}</span>
+                  <span className="mono" style={{ color: 'var(--danger)' }}>ENDED</span>
+                </div>
+                <div className="row-m" style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>
+                  <span>Date: {new Date(event.date).toLocaleDateString()}</span>
+                  <span>Phase: {event.phase || 'opinion'}</span>
+                  <span>Candidates: {candidates.filter(c => c.event_id === event.id).length}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Upload Event & Candidates */}
       <div className="card" style={{ padding: '1.5rem' }}>

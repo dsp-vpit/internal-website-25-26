@@ -48,6 +48,12 @@ export default function VotingPage() {
           return;
         }
 
+        // Check if event is ended
+        if (eventData.is_ended) {
+          setError('No active voting event available. The current event has ended.');
+          return;
+        }
+
         setEvent(eventData);
         setPhase(eventData.phase || 'opinion');
         

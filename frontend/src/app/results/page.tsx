@@ -363,19 +363,19 @@ export default function ResultsPage() {
                 Opinion Poll Results
               </div>
               <div className="row-m" style={{ gap: '1rem', flexWrap: 'wrap' }}>
-                <div className="card" style={{ padding: '0.75rem 1rem', background: 'var(--bg-elev)', minWidth: '120px', textAlign: 'center' }}>
+                <div style={{ padding: '0.75rem 1rem', background: 'var(--bg-elev)', minWidth: '120px', textAlign: 'center', border: '2px solid var(--border)' }}>
                   <div style={{ color: 'var(--brand)', fontWeight: 'bold', marginBottom: '0.25rem' }}>Yes</div>
                   <div className="mono">{result.opinion_yes} ({result.opinion_yes_percent}%)</div>
                 </div>
-                <div className="card" style={{ padding: '0.75rem 1rem', background: 'var(--bg-elev)', minWidth: '120px', textAlign: 'center' }}>
+                <div style={{ padding: '0.75rem 1rem', background: 'var(--bg-elev)', minWidth: '120px', textAlign: 'center', border: '2px solid var(--border)' }}>
                   <div style={{ color: 'var(--danger)', fontWeight: 'bold', marginBottom: '0.25rem' }}>No</div>
                   <div className="mono">{result.opinion_no}</div>
                 </div>
-                <div className="card" style={{ padding: '0.75rem 1rem', background: 'var(--bg-elev)', minWidth: '120px', textAlign: 'center' }}>
+                <div style={{ padding: '0.75rem 1rem', background: 'var(--bg-elev)', minWidth: '120px', textAlign: 'center', border: '2px solid var(--border)' }}>
                   <div style={{ color: 'var(--muted)', fontWeight: 'bold', marginBottom: '0.25rem' }}>Abstain</div>
                   <div className="mono">{result.opinion_abstain}</div>
                 </div>
-                <div className="card" style={{ padding: '0.75rem 1rem', background: 'var(--bg-elev)', minWidth: '120px', textAlign: 'center' }}>
+                <div style={{ padding: '0.75rem 1rem', background: 'var(--bg-elev)', minWidth: '120px', textAlign: 'center', border: '2px solid var(--border)' }}>
                   <div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>Total</div>
                   <div className="mono">{result.opinion_total}</div>
                 </div>
@@ -389,15 +389,15 @@ export default function ResultsPage() {
                   Final Vote Results
                 </div>
                 <div className="row-m" style={{ gap: '1rem', flexWrap: 'wrap' }}>
-                  <div className="card" style={{ padding: '0.75rem 1rem', background: 'var(--bg-elev)', minWidth: '120px', textAlign: 'center' }}>
+                  <div style={{ padding: '0.75rem 1rem', background: 'var(--bg-elev)', minWidth: '120px', textAlign: 'center', border: '2px solid var(--border)' }}>
                     <div style={{ color: 'var(--brand)', fontWeight: 'bold', marginBottom: '0.25rem' }}>Yes</div>
                     <div className="mono">{result.final_yes} ({result.final_yes_percent}%)</div>
                   </div>
-                  <div className="card" style={{ padding: '0.75rem 1rem', background: 'var(--bg-elev)', minWidth: '120px', textAlign: 'center' }}>
+                  <div style={{ padding: '0.75rem 1rem', background: 'var(--bg-elev)', minWidth: '120px', textAlign: 'center', border: '2px solid var(--border)' }}>
                     <div style={{ color: 'var(--danger)', fontWeight: 'bold', marginBottom: '0.25rem' }}>No</div>
                     <div className="mono">{result.final_no}</div>
                   </div>
-                  <div className="card" style={{ padding: '0.75rem 1rem', background: 'var(--bg-elev)', minWidth: '120px', textAlign: 'center' }}>
+                  <div style={{ padding: '0.75rem 1rem', background: 'var(--bg-elev)', minWidth: '120px', textAlign: 'center', border: '2px solid var(--border)' }}>
                     <div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>Total</div>
                     <div className="mono">{result.final_total}</div>
                   </div>
