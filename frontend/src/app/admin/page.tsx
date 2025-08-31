@@ -83,7 +83,7 @@ export default function AdminPage() {
       setLoadingUsers(true);
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, is_approved')
+        .select('id, email, name, is_approved')
         .eq('is_approved', false);
       if (!error && data) setPendingUsers(data);
       setLoadingUsers(false);
@@ -119,9 +119,16 @@ export default function AdminPage() {
   const updateUserStatus = async (userId: string, field: 'is_approved' | 'can_vote', value: boolean) => {
     setUpdatingUser(userId);
     try {
+      let updateData: any = { [field]: value };
+      
+      // If removing approval status, also remove voting privileges
+      if (field === 'is_approved' && !value) {
+        updateData.can_vote = false;
+      }
+      
       const { error } = await supabase
         .from('profiles')
-        .update({ [field]: value })
+        .update(updateData)
         .eq('id', userId);
 
       if (error) {
@@ -131,7 +138,7 @@ export default function AdminPage() {
         // Update local state
         setAllUsers(prevUsers => 
           prevUsers.map(user => 
-            user.id === userId ? { ...user, [field]: value } : user
+            user.id === userId ? { ...user, ...updateData } : user
           )
         );
       }
@@ -560,7 +567,14 @@ export default function AdminPage() {
                 background: 'var(--bg-elev)', 
                 border: '1px solid var(--border)' 
               }}>
-                <span style={{ flex: 1 }}>{u.email}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
+                    {u.name || u.email}
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>
+                    {u.email}
+                  </div>
+                </div>
                 <button
                   className="btn btn-primary"
                   onClick={() => approveUser(u.id)}
