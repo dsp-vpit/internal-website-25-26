@@ -65,6 +65,13 @@ export default function AdminPage() {
   const [loadingResults, setLoadingResults] = useState<string | null>(null);
   const [deletingEvent, setDeletingEvent] = useState<string | null>(null);
 
+  // User management state
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [loadingAllUsers, setLoadingAllUsers] = useState(false);
+  const [updatingUser, setUpdatingUser] = useState<string | null>(null);
+  const [deletingUser, setDeletingUser] = useState<string | null>(null);
+  const [userManagementExpanded, setUserManagementExpanded] = useState(false);
+
   useEffect(() => {
     if (!loading && (!user || !user.is_admin)) {
       router.replace('/dashboard');
@@ -84,6 +91,20 @@ export default function AdminPage() {
     if (user && user.is_admin) fetchPendingUsers();
   }, [user]);
 
+  // Fetch all users for management
+  useEffect(() => {
+    const fetchAllUsers = async () => {
+      setLoadingAllUsers(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email, name, is_approved, can_vote, is_admin, created_at')
+        .order('created_at', { ascending: false });
+      if (!error && data) setAllUsers(data);
+      setLoadingAllUsers(false);
+    };
+    if (user && user.is_admin) fetchAllUsers();
+  }, [user]);
+
   const approveUser = async (id: string) => {
     setApproving(id);
     await supabase.from('profiles').update({ 
@@ -92,6 +113,77 @@ export default function AdminPage() {
     }).eq('id', id);
     setPendingUsers(pendingUsers.filter(u => u.id !== id));
     setApproving(null);
+  };
+
+  // User management functions
+  const updateUserStatus = async (userId: string, field: 'is_approved' | 'can_vote', value: boolean) => {
+    setUpdatingUser(userId);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ [field]: value })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating user:', error);
+        alert('Failed to update user status');
+      } else {
+        // Update local state
+        setAllUsers(prevUsers => 
+          prevUsers.map(user => 
+            user.id === userId ? { ...user, [field]: value } : user
+          )
+        );
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      alert('An unexpected error occurred');
+    } finally {
+      setUpdatingUser(null);
+    }
+  };
+
+  const deleteUser = async (userId: string, userEmail: string) => {
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete the user "${userEmail}"?\n\n` +
+      'This will permanently remove:\n' +
+      '• User profile\n' +
+      '• All their votes\n' +
+      '• Account access\n\n' +
+      'This action cannot be undone.'
+    );
+
+    if (!confirmDelete) return;
+
+    setDeletingUser(userId);
+    try {
+      // Delete user's votes first (foreign key constraint)
+      const { error: votesError } = await supabase
+        .from('votes')
+        .delete()
+        .eq('user_id', userId);
+
+      if (votesError) throw votesError;
+
+      // Delete user profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (profileError) throw profileError;
+
+      // Update local state
+      setAllUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+      setPendingUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+
+      alert('User deleted successfully');
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('Failed to delete user');
+    } finally {
+      setDeletingUser(null);
+    }
   };
 
   // Parse JSON input
@@ -480,6 +572,153 @@ export default function AdminPage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* User Management */}
+      <div className="card" style={{ padding: '1.5rem' }}>
+        <details 
+          open={userManagementExpanded}
+          onToggle={(e) => setUserManagementExpanded(e.currentTarget.open)}
+        >
+          <summary style={{ 
+            cursor: 'pointer', 
+            listStyle: 'none',
+            marginBottom: userManagementExpanded ? '1rem' : '0'
+          }}>
+            <div className="title" style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              marginBottom: 0
+            }}>
+              <span>User Management</span>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem'
+              }}>
+                <span style={{ 
+                  fontSize: '0.9rem', 
+                  color: 'var(--muted)',
+                  fontWeight: 'normal'
+                }}>
+                  {allUsers.length} users
+                </span>
+                <span style={{ 
+                  fontSize: '0.8rem', 
+                  color: 'var(--muted)',
+                  transition: 'transform 0.2s ease',
+                  transform: userManagementExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+                }}>
+                  ▶
+                </span>
+              </div>
+            </div>
+          </summary>
+          
+          {loadingAllUsers ? (
+            <p style={{ color: 'var(--muted)' }}>Loading users...</p>
+          ) : allUsers.length === 0 ? (
+            <p style={{ color: 'var(--muted)' }}>No users found.</p>
+          ) : (
+            <div className="stack-m">
+              {allUsers.map(user => (
+                <div key={user.id} className="card" style={{ 
+                  padding: '1rem', 
+                  background: 'var(--bg-elev)', 
+                  border: '1px solid var(--border)'
+                }}>
+                  <div className="row-m" style={{ alignItems: 'center', marginBottom: '0.75rem' }}>
+                                      <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
+                      {user.name || user.email}
+                    </div>
+                    <div className="row-m" style={{ gap: '1rem', fontSize: '0.85rem', color: 'var(--muted)' }}>
+                      <span>{user.email}</span>
+                      <span>Joined: {new Date(user.created_at).toLocaleDateString()}</span>
+                      {user.is_admin && <span style={{ color: 'var(--brand)' }}>• Admin</span>}
+                    </div>
+                  </div>
+                  </div>
+                  
+                  <div className="row-m" style={{ gap: '0.5rem', flexWrap: 'wrap' }}>
+                    {/* Member Status Toggle */}
+                    <button
+                      className={`btn ${user.is_approved ? 'btn-primary' : 'btn-ghost'}`}
+                      onClick={() => updateUserStatus(user.id, 'is_approved', !user.is_approved)}
+                      disabled={updatingUser === user.id || user.is_admin}
+                      style={{ fontSize: '0.85rem' }}
+                    >
+                      {updatingUser === user.id ? 'Updating...' : 
+                       user.is_approved ? 'Approved Member' : 'Pending Member'}
+                    </button>
+                    
+                    {/* Voting Status Toggle */}
+                    <button
+                      className={`btn ${user.can_vote ? 'btn-primary' : 'btn-ghost'}`}
+                      onClick={() => updateUserStatus(user.id, 'can_vote', !user.can_vote)}
+                      disabled={updatingUser === user.id || !user.is_approved || user.is_admin}
+                      style={{ fontSize: '0.85rem' }}
+                    >
+                      {updatingUser === user.id ? 'Updating...' : 
+                       user.can_vote ? 'Can Vote' : 'Cannot Vote'}
+                    </button>
+                    
+                    {/* Delete User */}
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => deleteUser(user.id, user.email)}
+                      disabled={deletingUser === user.id || user.is_admin}
+                      style={{ fontSize: '0.85rem' }}
+                    >
+                      {deletingUser === user.id ? 'Deleting...' : 'Delete User'}
+                    </button>
+                  </div>
+                  
+                  {/* Status Indicators */}
+                  <div className="row-m" style={{ marginTop: '0.75rem', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    {user.is_approved && (
+                      <span style={{ 
+                        padding: '0.25rem 0.5rem', 
+                        background: 'rgba(16, 185, 129, 0.1)', 
+                        color: '#10b981',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        border: '1px solid rgba(16, 185, 129, 0.2)'
+                      }}>
+                        ✓ Approved
+                      </span>
+                    )}
+                    {user.can_vote && (
+                      <span style={{ 
+                        padding: '0.25rem 0.5rem', 
+                        background: 'rgba(59, 130, 246, 0.1)', 
+                        color: '#3b82f6',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        border: '1px solid rgba(59, 130, 246, 0.2)'
+                      }}>
+                        🗳️ Can Vote
+                      </span>
+                    )}
+                    {user.is_admin && (
+                      <span style={{ 
+                        padding: '0.25rem 0.5rem', 
+                        background: 'rgba(139, 92, 246, 0.1)', 
+                        color: '#8b5cf6',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        border: '1px solid rgba(139, 92, 246, 0.2)'
+                      }}>
+                        👑 Admin
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </details>
       </div>
 
       {/* Current Event & Candidate */}

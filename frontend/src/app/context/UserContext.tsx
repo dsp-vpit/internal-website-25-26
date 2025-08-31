@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabaseClient';
 interface UserProfile {
   id: string;
   email: string;
+  name?: string;
   is_admin: boolean;
   is_approved: boolean;
   can_vote: boolean;
@@ -53,6 +54,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       setUser({
         id: data.id,
         email: data.email,
+        name: data.name,
         is_admin: data.is_admin,
         is_approved: data.is_approved,
         can_vote: data.can_vote,
