@@ -27,8 +27,8 @@ export default function DashboardPage() {
   };
 
   const handleScholarshipTracker = () => {
-    // Replace with your actual scholarship tracker URL
-    window.open('https://your-scholarship-tracker-url.com', '_blank');
+    // Open the Google Sheets scholarship tracker
+    window.open('https://docs.google.com/spreadsheets/d/1xh6kzs2-PGQAGn3V6_BRV8XULJZ_aVII_zInYIEFcGo/edit?usp=drivesdk', '_blank');
   };
 
   const handleBroMeetingSlides = () => {

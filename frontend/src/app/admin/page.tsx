@@ -5,6 +5,37 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '../context/UserContext';
 import { supabase } from '../../lib/supabaseClient';
 
+interface Vote {
+  id: string;
+  user_id: string;
+  event_id: string;
+  candidate_id: string;
+  type: 'opinion' | 'final';
+  vote_value: 'yes' | 'no' | 'abstain';
+  is_anonymous: boolean;
+  created_at: string;
+}
+
+interface Candidate {
+  id: string;
+  name: string;
+  major?: string;
+  grad_year?: string;
+  gpa?: string;
+  position?: string;
+  event_id: string;
+}
+
+interface Event {
+  id: string;
+  type: string;
+  date: string;
+  phase: 'opinion' | 'final';
+  current_candidate_index: number;
+  is_ended: boolean;
+  approval_threshold: number;
+}
+
 export default function AdminPage() {
   const { user, loading } = useUser();
   const router = useRouter();
@@ -19,14 +50,20 @@ export default function AdminPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<string | null>(null);
 
-  const [currentEvent, setCurrentEvent] = useState<any>(null);
-  const [currentCandidate, setCurrentCandidate] = useState<any>(null);
-  const [candidates, setCandidates] = useState<any[]>([]);
+  const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
+  const [currentCandidate, setCurrentCandidate] = useState<Candidate | null>(null);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [advancing, setAdvancing] = useState(false);
 
   const [togglingPhase, setTogglingPhase] = useState(false);
   const [endingEvent, setEndingEvent] = useState(false);
-  const [pastEvents, setPastEvents] = useState<any[]>([]);
+  const [pastEvents, setPastEvents] = useState<Event[]>([]);
+  
+  // Past events detailed view
+  const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
+  const [eventResults, setEventResults] = useState<{[key: string]: any}>({});
+  const [loadingResults, setLoadingResults] = useState<string | null>(null);
+  const [deletingEvent, setDeletingEvent] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && (!user || !user.is_admin)) {
@@ -80,9 +117,14 @@ export default function AdminPage() {
       const eventRes = await supabase.from('events').insert({
         type: parsedData.event_type,
         date: parsedData.date,
+        phase: 'opinion', // Always start with opinion poll
+        current_candidate_index: 0,
+        is_ended: false,
+        approval_threshold: 85
       }).select().single();
       if (eventRes.error) throw eventRes.error;
       const eventId = eventRes.data.id;
+      
       // Insert candidates
       if (parsedData.event_type === 'member') {
         const candidates = parsedData.candidates.map((c: any) => ({ ...c, event_id: eventId }));
@@ -98,6 +140,7 @@ export default function AdminPage() {
         const candRes = await supabase.from('candidates').insert(allCandidates);
         if (candRes.error) throw candRes.error;
       }
+      
       setUploadResult('Event and candidates uploaded successfully!');
       setParsedData(null);
       setJsonInput('');
@@ -107,36 +150,36 @@ export default function AdminPage() {
     setUploading(false);
   };
 
-    // Fetch current event and candidates
-    useEffect(() => {
-      const fetchEventAndCandidates = async () => {
-        const { data: eventData, error: eventError } = await supabase
-          .from('events')
+  // Fetch current event and candidates
+  useEffect(() => {
+    const fetchEventAndCandidates = async () => {
+      const { data: eventData, error: eventError } = await supabase
+        .from('events')
+        .select('*')
+        .eq('is_ended', false)  // Only get non-ended events
+        .order('date', { ascending: false })
+        .limit(1)
+        .single();
+      if (!eventError && eventData) {
+        setCurrentEvent(eventData);
+        const { data: candData, error: candError } = await supabase
+          .from('candidates')
           .select('*')
-          .eq('is_ended', false)  // Only get non-ended events
-          .order('date', { ascending: false })
-          .limit(1)
-          .single();
-        if (!eventError && eventData) {
-          setCurrentEvent(eventData);
-          const { data: candData, error: candError } = await supabase
-            .from('candidates')
-            .select('*')
-            .eq('event_id', eventData.id)
-            .order('id', { ascending: true });
-          if (!candError && candData) {
-            setCandidates(candData);
-            setCurrentCandidate(candData[eventData.current_candidate_index] || null);
-          }
-        } else {
-          // No active event found
-          setCurrentEvent(null);
-          setCandidates([]);
-          setCurrentCandidate(null);
+          .eq('event_id', eventData.id)
+          .order('id', { ascending: true });
+        if (!candError && candData) {
+          setCandidates(candData);
+          setCurrentCandidate(candData[eventData.current_candidate_index] || null);
         }
-      };
-      fetchEventAndCandidates();
-    }, [uploadResult]); // refetch after upload
+      } else {
+        // No active event found
+        setCurrentEvent(null);
+        setCandidates([]);
+        setCurrentCandidate(null);
+      }
+    };
+    fetchEventAndCandidates();
+  }, [uploadResult]); // refetch after upload
 
   // Fetch past events
   useEffect(() => {
@@ -195,17 +238,34 @@ export default function AdminPage() {
     setAdvancing(false);
   };
 
-  // Toggle voting phase
+  // Toggle voting phase - only allow opinion to final, not back
   const handleTogglePhase = async () => {
     if (!currentEvent) return;
+    
+    // Only allow switching from opinion to final, not back
+    if (currentEvent.phase === 'final') {
+      alert('Cannot switch back to opinion poll. Once in final vote phase, you must end the event to start a new one.');
+      return;
+    }
+    
+    const confirmSwitch = window.confirm(
+      `Are you sure you want to switch from Opinion Poll to Final Vote?\n\n` +
+      `This will:\n` +
+      `• Make votes non-anonymous\n` +
+      `• Change vote options to Yes/No only\n` +
+      `• Prevent switching back to opinion poll\n\n` +
+      `This action cannot be undone.`
+    );
+    
+    if (!confirmSwitch) return;
+    
     setTogglingPhase(true);
-    const newPhase = currentEvent.phase === 'opinion' ? 'final' : 'opinion';
     const { error } = await supabase
       .from('events')
-      .update({ phase: newPhase })
+      .update({ phase: 'final' })
       .eq('id', currentEvent.id);
     if (!error) {
-      setCurrentEvent({ ...currentEvent, phase: newPhase });
+      setCurrentEvent({ ...currentEvent, phase: 'final' });
     }
     setTogglingPhase(false);
   };
@@ -218,6 +278,7 @@ export default function AdminPage() {
       `Are you sure you want to end the "${currentEvent.type}" event? This will:\n\n` +
       `• Remove all candidates from the voting page\n` +
       `• Prevent further voting on this event\n` +
+      `• Clear the current event display\n` +
       `• Keep all data accessible in admin dashboard\n\n` +
       `This action cannot be undone.`
     );
@@ -231,12 +292,141 @@ export default function AdminPage() {
       .eq('id', currentEvent.id);
     
     if (!error) {
-      setCurrentEvent({ ...currentEvent, is_ended: true });
-      alert('Event ended successfully! Candidates are no longer visible on the voting page.');
+      // Clear current event display
+      setCurrentEvent(null);
+      setCurrentCandidate(null);
+      setCandidates([]);
+      alert('Event ended successfully! The voting page and admin console are now cleared.');
     } else {
       alert('Failed to end event: ' + error.message);
     }
     setEndingEvent(false);
+  };
+
+  // Load detailed results for a past event
+  const loadEventResults = async (eventId: string) => {
+    if (eventResults[eventId]) {
+      setExpandedEventId(expandedEventId === eventId ? null : eventId);
+      return;
+    }
+    
+    setLoadingResults(eventId);
+    try {
+      // Fetch event details
+      const { data: eventData, error: eventError } = await supabase
+        .from('events')
+        .select('*')
+        .eq('id', eventId)
+        .single();
+      
+      if (eventError) throw eventError;
+      
+      // Fetch candidates
+      const { data: candidatesData, error: candidatesError } = await supabase
+        .from('candidates')
+        .select('*')
+        .eq('event_id', eventId)
+        .order('id', { ascending: true });
+      
+      if (candidatesError) throw candidatesError;
+      
+      // Fetch votes
+      const { data: votesData, error: votesError } = await supabase
+        .from('votes')
+        .select('*')
+        .eq('event_id', eventId);
+      
+      if (votesError) throw votesError;
+      
+      // Calculate results
+      const results = candidatesData.map((candidate: Candidate) => {
+        const candidateVotes = votesData.filter((vote: Vote) => vote.candidate_id === candidate.id);
+        
+        // Opinion poll results
+        const opinionVotes = candidateVotes.filter((vote: Vote) => vote.type === 'opinion');
+        const opinionYes = opinionVotes.filter((vote: Vote) => vote.vote_value === 'yes').length;
+        const opinionNo = opinionVotes.filter((vote: Vote) => vote.vote_value === 'no').length;
+        const opinionAbstain = opinionVotes.filter((vote: Vote) => vote.vote_value === 'abstain').length;
+        const opinionTotal = opinionVotes.length;
+        const opinionPercent = opinionTotal > 0 ? Math.round((opinionYes / opinionTotal) * 100) : 0;
+        
+        // Final vote results
+        const finalVotes = candidateVotes.filter((vote: Vote) => vote.type === 'final');
+        const finalYes = finalVotes.filter((vote: Vote) => vote.vote_value === 'yes').length;
+        const finalNo = finalVotes.filter((vote: Vote) => vote.vote_value === 'no').length;
+        const finalTotal = finalVotes.length;
+        const finalPercent = finalTotal > 0 ? Math.round((finalYes / finalTotal) * 100) : 0;
+        
+        return {
+          candidate,
+          opinion: { yes: opinionYes, no: opinionNo, abstain: opinionAbstain, total: opinionTotal, percent: opinionPercent },
+          final: { yes: finalYes, no: finalNo, total: finalTotal, percent: finalPercent },
+          approved: finalPercent >= (eventData.approval_threshold || 85)
+        };
+      });
+      
+      setEventResults({ ...eventResults, [eventId]: { event: eventData, results } });
+      setExpandedEventId(eventId);
+    } catch (error) {
+      console.error('Error loading event results:', error);
+      alert('Failed to load event results');
+    } finally {
+      setLoadingResults(null);
+    }
+  };
+
+  // Delete a past event
+  const deleteEvent = async (eventId: string) => {
+    const confirmDelete = window.confirm(
+      'Are you sure you want to delete this event? This will permanently remove:\n\n' +
+      '• All candidate data\n' +
+      '• All vote records\n' +
+      '• Event information\n\n' +
+      'This action cannot be undone.'
+    );
+    
+    if (!confirmDelete) return;
+    
+    setDeletingEvent(eventId);
+    try {
+      // Delete votes first (foreign key constraint)
+      const { error: votesError } = await supabase
+        .from('votes')
+        .delete()
+        .eq('event_id', eventId);
+      
+      if (votesError) throw votesError;
+      
+      // Delete candidates
+      const { error: candidatesError } = await supabase
+        .from('candidates')
+        .delete()
+        .eq('event_id', eventId);
+      
+      if (candidatesError) throw candidatesError;
+      
+      // Delete event
+      const { error: eventError } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', eventId);
+      
+      if (eventError) throw eventError;
+      
+      // Update local state
+      setPastEvents(pastEvents.filter(e => e.id !== eventId));
+      setEventResults({ ...eventResults, [eventId]: undefined });
+      if (expandedEventId === eventId) {
+        setExpandedEventId(null);
+      }
+      
+      alert('Event deleted successfully');
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      alert('Failed to delete event');
+    } finally {
+      setDeletingEvent(null);
+    }
   };
 
   if (loading || !user || !user.is_admin) return null;
@@ -301,31 +491,28 @@ export default function AdminPage() {
               <span className="mono">Event: {currentEvent.type}</span>
               <span className="mono">Date: {new Date(currentEvent.date).toLocaleDateString()}</span>
               <span className="mono">Phase: {currentEvent.phase || 'opinion'}</span>
-              {currentEvent.is_ended && (
-                <span className="mono" style={{ color: 'var(--danger)' }}>• ENDED</span>
-              )}
             </div>
             
             <div className="row-m" style={{ gap: '1rem' }}>
               <button 
                 className="btn btn-ghost" 
                 onClick={handleTogglePhase} 
-                disabled={togglingPhase || currentEvent.is_ended}
+                disabled={togglingPhase || currentEvent.phase === 'final'}
                 style={{ alignSelf: 'flex-start' }}
               >
-                {togglingPhase ? 'Switching...' : `Switch to ${currentEvent.phase === 'opinion' ? 'Final Vote' : 'Opinion Poll'}`}
+                {togglingPhase ? 'Switching...' : 
+                 currentEvent.phase === 'opinion' ? 'Switch to Final Vote' : 
+                 'Final Vote (Cannot Switch Back)'}
               </button>
               
-              {!currentEvent.is_ended && (
-                <button 
-                  className="btn btn-danger" 
-                  onClick={handleEndEvent} 
-                  disabled={endingEvent}
-                  style={{ alignSelf: 'flex-start' }}
-                >
-                  {endingEvent ? 'Ending...' : 'End Event'}
-                </button>
-              )}
+              <button 
+                className="btn btn-danger" 
+                onClick={handleEndEvent} 
+                disabled={endingEvent}
+                style={{ alignSelf: 'flex-start' }}
+              >
+                {endingEvent ? 'Ending...' : 'End Event'}
+              </button>
             </div>
             
             <div className="card" style={{ padding: '1rem', background: 'var(--bg-elev)' }}>
@@ -404,6 +591,130 @@ export default function AdminPage() {
                   <span>Phase: {event.phase || 'opinion'}</span>
                   <span>Candidates: {candidates.filter(c => c.event_id === event.id).length}</span>
                 </div>
+                
+                <div className="row-m" style={{ marginTop: '1rem', gap: '0.5rem' }}>
+                  <button 
+                    className="btn btn-ghost" 
+                    onClick={() => loadEventResults(event.id)}
+                    disabled={loadingResults === event.id}
+                    style={{ fontSize: '0.9rem' }}
+                  >
+                    {loadingResults === event.id ? 'Loading...' : 
+                     expandedEventId === event.id ? 'Hide Results' : 'View Results'}
+                  </button>
+                  
+                  <button 
+                    className="btn btn-danger" 
+                    onClick={() => deleteEvent(event.id)}
+                    disabled={deletingEvent === event.id}
+                    style={{ fontSize: '0.9rem' }}
+                  >
+                    {deletingEvent === event.id ? 'Deleting...' : 'Delete Event'}
+                  </button>
+                </div>
+                
+                {/* Expanded Results View */}
+                {expandedEventId === event.id && eventResults[event.id] && (
+                  <div style={{ marginTop: '1rem', padding: '1rem', background: 'var(--bg)', border: '1px solid var(--border)' }}>
+                    <div className="title" style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>
+                      Results for {eventResults[event.id].event.type} Event
+                    </div>
+                    
+                    <div className="stack-m">
+                      {eventResults[event.id].results.map((result: any, index: number) => (
+                        <div key={result.candidate.id} className="card" style={{ padding: '1rem', background: 'var(--bg-elev)' }}>
+                          <div className="title" style={{ marginBottom: '0.75rem', fontSize: '1.1rem' }}>
+                            {result.candidate.name}
+                            {result.approved && (
+                              <span style={{ color: 'var(--brand)', marginLeft: '0.5rem' }}>✓ APPROVED</span>
+                            )}
+                          </div>
+                          
+                          <div className="stack-m">
+                            {result.candidate.major && (
+                              <div className="row-m">
+                                <span style={{ color: 'var(--muted)', minWidth: '100px' }}>Major:</span>
+                                <span>{result.candidate.major}</span>
+                              </div>
+                            )}
+                            {result.candidate.grad_year && (
+                              <div className="row-m">
+                                <span style={{ color: 'var(--muted)', minWidth: '100px' }}>Grad Year:</span>
+                                <span>{result.candidate.grad_year}</span>
+                              </div>
+                            )}
+                            {result.candidate.gpa && (
+                              <div className="row-m">
+                                <span style={{ color: 'var(--muted)', minWidth: '100px' }}>GPA:</span>
+                                <span>{result.candidate.gpa}</span>
+                              </div>
+                            )}
+                            {result.candidate.position && (
+                              <div className="row-m">
+                                <span style={{ color: 'var(--muted)', minWidth: '100px' }}>Position:</span>
+                                <span>{result.candidate.position}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Opinion Poll Results */}
+                          <div style={{ marginTop: '1rem' }}>
+                            <div className="title" style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Opinion Poll</div>
+                            <div className="row-m" style={{ gap: '1rem', flexWrap: 'wrap' }}>
+                              <div style={{ padding: '0.5rem', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px' }}>
+                                <span style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>Yes:</span>
+                                <span style={{ marginLeft: '0.5rem', fontWeight: 'bold' }}>{result.opinion.yes}</span>
+                              </div>
+                              <div style={{ padding: '0.5rem', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px' }}>
+                                <span style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>No:</span>
+                                <span style={{ marginLeft: '0.5rem', fontWeight: 'bold' }}>{result.opinion.no}</span>
+                              </div>
+                              <div style={{ padding: '0.5rem', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px' }}>
+                                <span style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>Abstain:</span>
+                                <span style={{ marginLeft: '0.5rem', fontWeight: 'bold' }}>{result.opinion.abstain}</span>
+                              </div>
+                              <div style={{ padding: '0.5rem', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px' }}>
+                                <span style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>Total:</span>
+                                <span style={{ marginLeft: '0.5rem', fontWeight: 'bold' }}>{result.opinion.total}</span>
+                              </div>
+                              <div style={{ padding: '0.5rem', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px' }}>
+                                <span style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>Approval:</span>
+                                <span style={{ marginLeft: '0.5rem', fontWeight: 'bold', color: 'var(--brand)' }}>
+                                  {result.opinion.percent}%
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Final Vote Results */}
+                          <div style={{ marginTop: '1rem' }}>
+                            <div className="title" style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Final Vote</div>
+                            <div className="row-m" style={{ gap: '1rem', flexWrap: 'wrap' }}>
+                              <div style={{ padding: '0.5rem', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px' }}>
+                                <span style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>Yes:</span>
+                                <span style={{ marginLeft: '0.5rem', fontWeight: 'bold' }}>{result.final.yes}</span>
+                              </div>
+                              <div style={{ padding: '0.5rem', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px' }}>
+                                <span style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>No:</span>
+                                <span style={{ marginLeft: '0.5rem', fontWeight: 'bold' }}>{result.final.no}</span>
+                              </div>
+                              <div style={{ padding: '0.5rem', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px' }}>
+                                <span style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>Total:</span>
+                                <span style={{ marginLeft: '0.5rem', fontWeight: 'bold' }}>{result.final.total}</span>
+                              </div>
+                              <div style={{ padding: '0.5rem', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px' }}>
+                                <span style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>Approval:</span>
+                                <span style={{ marginLeft: '0.5rem', fontWeight: 'bold', color: 'var(--brand)' }}>
+                                  {result.final.percent}%
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
