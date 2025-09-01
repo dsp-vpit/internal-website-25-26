@@ -29,6 +29,7 @@ interface Candidate {
 interface Event {
   id: string;
   type: string;
+  event_name?: string;
   date: string;
   phase: 'opinion' | 'final';
   current_candidate_index: number;
@@ -43,12 +44,50 @@ export default function AdminPage() {
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [approving, setApproving] = useState<string | null>(null);
 
+  // Helper function to format date without timezone issues
+  const formatDate = (dateString: string) => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString();
+  };
+
+  // Function to clean up multiple non-ended events
+  const cleanupMultipleEvents = async () => {
+    try {
+      // Get all non-ended events
+      const { data: events, error } = await supabase
+        .from('events')
+        .select('*')
+        .eq('is_ended', false)
+        .order('created_at', { ascending: false });
+      
+      if (error || !events || events.length <= 1) return;
+      
+      // Keep only the most recent event, end all others
+      const eventsToEnd = events.slice(1);
+      const eventIdsToEnd = eventsToEnd.map(e => e.id);
+      
+      const { error: endError } = await supabase
+        .from('events')
+        .update({ is_ended: true })
+        .in('id', eventIdsToEnd);
+      
+      if (endError) {
+        console.warn('Warning: Could not end old events:', endError);
+      } else {
+        console.log(`Ended ${eventsToEnd.length} old events, keeping the most recent one.`);
+      }
+    } catch (error) {
+      console.error('Error cleaning up multiple events:', error);
+    }
+  };
+
   // Event/Candidate upload state
   const [jsonInput, setJsonInput] = useState('');
   const [parsedData, setParsedData] = useState<any>(null);
   const [parseError, setParseError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<string | null>(null);
+  const [eventName, setEventName] = useState('');
 
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
   const [currentCandidate, setCurrentCandidate] = useState<Candidate | null>(null);
@@ -77,6 +116,13 @@ export default function AdminPage() {
       router.replace('/dashboard');
     }
   }, [user, loading, router]);
+
+  // Clean up multiple events on component load
+  useEffect(() => {
+    if (user && user.is_admin) {
+      cleanupMultipleEvents();
+    }
+  }, [user]);
 
   useEffect(() => {
     const fetchPendingUsers = async () => {
@@ -212,9 +258,20 @@ export default function AdminPage() {
     setUploading(true);
     setUploadResult(null);
     try {
-      // Insert event
+      // First, end any existing non-ended events
+      const { error: endError } = await supabase
+        .from('events')
+        .update({ is_ended: true })
+        .eq('is_ended', false);
+      
+      if (endError) {
+        console.warn('Warning: Could not end existing events:', endError);
+      }
+
+      // Insert new event
       const eventRes = await supabase.from('events').insert({
-        type: parsedData.event_type,
+        type: parsedData.type,
+        event_name: eventName.trim(),
         date: parsedData.date,
         phase: 'opinion', // Always start with opinion poll
         current_candidate_index: 0,
@@ -224,25 +281,36 @@ export default function AdminPage() {
       if (eventRes.error) throw eventRes.error;
       const eventId = eventRes.data.id;
       
-      // Insert candidates
-      if (parsedData.event_type === 'member') {
-        const candidates = parsedData.candidates.map((c: any) => ({ ...c, event_id: eventId }));
+      // Insert candidates with order_index
+      if (parsedData.type === 'member') {
+        const candidates = parsedData.candidates.map((c: any, index: number) => ({ 
+          ...c, 
+          event_id: eventId,
+          order_index: index
+        }));
         const candRes = await supabase.from('candidates').insert(candidates);
         if (candRes.error) throw candRes.error;
-      } else if (parsedData.event_type === 'exec') {
+      } else if (parsedData.type === 'exec') {
         let allCandidates: any[] = [];
+        let orderIndex = 0;
         parsedData.positions.forEach((pos: any) => {
           pos.candidates.forEach((c: any) => {
-            allCandidates.push({ name: c.name, position: pos.name, event_id: eventId });
+            allCandidates.push({ 
+              name: c.name, 
+              position: pos.name, 
+              event_id: eventId,
+              order_index: orderIndex++
+            });
           });
         });
         const candRes = await supabase.from('candidates').insert(allCandidates);
         if (candRes.error) throw candRes.error;
       }
       
-      setUploadResult('Event and candidates uploaded successfully!');
+      setUploadResult('Event and candidates uploaded successfully! Previous events have been automatically ended.');
       setParsedData(null);
       setJsonInput('');
+      setEventName('');
     } catch (e: any) {
       setUploadResult('Upload failed: ' + (e.message || e.toString()));
     }
@@ -252,20 +320,22 @@ export default function AdminPage() {
   // Fetch current event and candidates
   useEffect(() => {
     const fetchEventAndCandidates = async () => {
-      const { data: eventData, error: eventError } = await supabase
+      // Get the most recent non-ended event
+      const { data: eventsData, error: eventError } = await supabase
         .from('events')
         .select('*')
-        .eq('is_ended', false)  // Only get non-ended events
-        .order('date', { ascending: false })
-        .limit(1)
-        .single();
-      if (!eventError && eventData) {
+        .eq('is_ended', false)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      if (!eventError && eventsData && eventsData.length > 0) {
+        const eventData = eventsData[0];
         setCurrentEvent(eventData);
         const { data: candData, error: candError } = await supabase
           .from('candidates')
           .select('*')
           .eq('event_id', eventData.id)
-          .order('id', { ascending: true });
+          .order('order_index', { ascending: true });
         if (!candError && candData) {
           setCandidates(candData);
           setCurrentCandidate(candData[eventData.current_candidate_index] || null);
@@ -352,7 +422,8 @@ export default function AdminPage() {
       `This will:\n` +
       `• Make votes non-anonymous\n` +
       `• Change vote options to Yes/No only\n` +
-      `• Prevent switching back to opinion poll\n\n` +
+      `• Prevent switching back to opinion poll\n` +
+      `• Reset to the first candidate\n\n` +
       `This action cannot be undone.`
     );
     
@@ -361,10 +432,11 @@ export default function AdminPage() {
     setTogglingPhase(true);
     const { error } = await supabase
       .from('events')
-      .update({ phase: 'final' })
+      .update({ phase: 'final', current_candidate_index: 0 })
       .eq('id', currentEvent.id);
     if (!error) {
-      setCurrentEvent({ ...currentEvent, phase: 'final' });
+      setCurrentEvent({ ...currentEvent, phase: 'final', current_candidate_index: 0 });
+      setCurrentCandidate(candidates[0] || null);
     }
     setTogglingPhase(false);
   };
@@ -740,11 +812,11 @@ export default function AdminPage() {
         <div className="title" style={{ marginBottom: '1rem' }}>Current Event & Candidate</div>
         {currentEvent && currentCandidate ? (
           <div className="stack-m">
-            <div className="row-m" style={{ color: 'var(--muted)' }}>
-              <span className="mono">Event: {currentEvent.type}</span>
-              <span className="mono">Date: {new Date(currentEvent.date).toLocaleDateString()}</span>
-              <span className="mono">Phase: {currentEvent.phase || 'opinion'}</span>
-            </div>
+                      <div className="row-m" style={{ color: 'var(--muted)' }}>
+            <span className="mono">Event: {currentEvent.event_name || currentEvent.type}</span>
+            <span className="mono">Date: {formatDate(currentEvent.date)}</span>
+            <span className="mono">Phase: {currentEvent.phase || 'opinion'}</span>
+          </div>
             
             <div className="row-m" style={{ gap: '1rem' }}>
               <button 
@@ -836,11 +908,11 @@ export default function AdminPage() {
                 opacity: 0.8
               }}>
                 <div className="row-m" style={{ alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <span className="title" style={{ fontSize: '1.1rem' }}>{event.type}</span>
+                  <span className="title" style={{ fontSize: '1.1rem' }}>{event.event_name || event.type}</span>
                   <span className="mono" style={{ color: 'var(--danger)' }}>ENDED</span>
                 </div>
                 <div className="row-m" style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>
-                  <span>Date: {new Date(event.date).toLocaleDateString()}</span>
+                  <span>Date: {formatDate(event.date)}</span>
                   <span>Phase: {event.phase || 'opinion'}</span>
                   <span>Candidates: {candidates.filter(c => c.event_id === event.id).length}</span>
                 </div>
@@ -987,6 +1059,22 @@ export default function AdminPage() {
             style={{ fontFamily: 'monospace', resize: 'vertical' }}
           />
           
+          {parsedData && (
+            <div className="stack-s">
+              <label style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text)' }}>
+                Event Name *
+              </label>
+              <input
+                type="text"
+                value={eventName}
+                onChange={e => setEventName(e.target.value)}
+                placeholder="Enter a descriptive name for this event (e.g., 'Fall 2024 New Member Voting')"
+                className="input"
+                style={{ width: '100%' }}
+              />
+            </div>
+          )}
+          
           <div className="row-m">
             <button className="btn btn-ghost" onClick={handleParseJson}>
               Preview
@@ -994,7 +1082,7 @@ export default function AdminPage() {
             <button 
               className="btn btn-primary" 
               onClick={handleUpload} 
-              disabled={!parsedData || uploading}
+              disabled={!parsedData || uploading || !eventName.trim()}
             >
               {uploading ? 'Uploading...' : 'Create Event'}
             </button>

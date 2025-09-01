@@ -31,6 +31,12 @@ export default function VotingPage() {
   const [lastCandidateIndex, setLastCandidateIndex] = useState<number | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Helper function to format date without timezone issues
+  const formatDate = (dateString: string) => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString();
+  };
+
   // Fetch current event, candidate, and phase
   useEffect(() => {
     const fetchData = async () => {
@@ -39,7 +45,7 @@ export default function VotingPage() {
           .from('events')
           .select('*')
           .eq('is_ended', false)  // Only get non-ended events
-          .order('date', { ascending: false })
+          .order('created_at', { ascending: false })
           .limit(1)
           .single();
         
@@ -61,7 +67,7 @@ export default function VotingPage() {
           .from('candidates')
           .select('*')
           .eq('event_id', eventData.id)
-          .order('id', { ascending: true });
+          .order('order_index', { ascending: true });
         
         if (candError) {
           console.error('Error fetching candidates:', candError);
@@ -344,10 +350,10 @@ export default function VotingPage() {
       {/* Event Header */}
       <div className="card" style={{ padding: '1.5rem' }}>
         <div className="title" style={{ marginBottom: '1rem' }}>
-          {event.type === 'new_member' ? 'New Member Voting' : 'Executive Committee Voting'}
+          {event.event_name || (event.type === 'member' ? 'New Member Voting' : 'Executive Committee Voting')}
         </div>
         <div className="row-m" style={{ color: 'var(--muted)' }}>
-          <span className="mono">Date: {new Date(event.date).toLocaleDateString()}</span>
+          <span className="mono">Date: {formatDate(event.date)}</span>
           <span className="mono">Phase: {phase === 'opinion' ? 'Opinion Poll' : 'Final Vote'}</span>
         </div>
       </div>
