@@ -20,6 +20,7 @@ export default function VotingPage() {
   const { user, loading } = useUser();
   const [event, setEvent] = useState<any>(null);
   const [candidate, setCandidate] = useState<any>(null);
+  const [candidates, setCandidates] = useState<any[]>([]);
   const [phase, setPhase] = useState<VoteType>('opinion');
   const [hasVoted, setHasVoted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -80,6 +81,7 @@ export default function VotingPage() {
           return;
         }
 
+        setCandidates(candData);
         const currentCandidate = candData[eventData.current_candidate_index] || null;
         if (!currentCandidate) {
           setError('No current candidate available');
@@ -117,28 +119,35 @@ export default function VotingPage() {
           
           // Check if candidate index has changed
           if (eventData.current_candidate_index !== lastCandidateIndex) {
-            console.log('Candidate changed, updating...');
+            console.log('Candidate index changed from', lastCandidateIndex, 'to', eventData.current_candidate_index);
             needsUpdate = true;
           }
           
           // Check if phase has changed
           if (eventData.phase !== phase) {
-            console.log('Phase changed, updating...');
+            console.log('Phase changed from', phase, 'to', eventData.phase);
             needsUpdate = true;
           }
 
           // If changes detected, fetch fresh data
           if (needsUpdate) {
+            console.log('Fetching updated candidates...');
             // Fetch updated candidates
             const { data: candData, error: candError } = await supabase
               .from('candidates')
               .select('*')
               .eq('event_id', eventData.id)
-              .order('id', { ascending: true });
+              .order('order_index', { ascending: true });
             
             if (!candError && candData && candData.length > 0) {
+              console.log('Candidates fetched:', candData.length, 'candidates');
+              console.log('Current candidate index:', eventData.current_candidate_index);
+              console.log('Available candidates:', candData.map((c, i) => `${i}: ${c.name}`));
+              
+              setCandidates(candData);
               const newCurrentCandidate = candData[eventData.current_candidate_index] || null;
               if (newCurrentCandidate) {
+                console.log('Setting new candidate:', newCurrentCandidate.name);
                 setEvent(eventData);
                 setPhase(eventData.phase || 'opinion');
                 setCandidate(newCurrentCandidate);
@@ -146,8 +155,11 @@ export default function VotingPage() {
                 setHasVoted(false); // Reset vote status for new candidate
                 setMessage(null);
                 setError(null);
-                console.log('Updated to candidate:', newCurrentCandidate.name);
+              } else {
+                console.error('No candidate found at index:', eventData.current_candidate_index);
               }
+            } else {
+              console.error('Error fetching candidates:', candError);
             }
           }
         }
