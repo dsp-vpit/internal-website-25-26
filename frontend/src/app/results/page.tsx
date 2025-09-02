@@ -464,16 +464,104 @@ export default function ResultsPage() {
             background: 'var(--bg-elev)',
             borderRadius: '8px',
             border: '1px solid var(--border)',
-            minWidth: '180px',
-            textAlign: 'center',
+            minWidth: '250px',
             flex: 1
           }}>
             <div style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '0.5rem', color: 'var(--brand)' }}>
               {analytics.approvedCount}
             </div>
-            <div style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>
+            <div style={{ fontSize: '0.9rem', color: 'var(--muted)', marginBottom: '1rem' }}>
               Approved
             </div>
+            <details style={{ textAlign: 'left' }}>
+              <summary style={{ cursor: 'pointer', color: 'var(--brand)', fontSize: '0.9rem' }}>
+                View Final Vote Ranking
+              </summary>
+              <div className="stack-m" style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
+                {/* Sort candidates by approval percentage (highest first) */}
+                {calculatedResults
+                  .sort((a, b) => {
+                    const aPercentage = a.final_total > 0 ? (a.final_yes / a.final_total) * 100 : 0;
+                    const bPercentage = b.final_total > 0 ? (b.final_yes / b.final_total) * 100 : 0;
+                    return bPercentage - aPercentage; // Highest first
+                  })
+                  .map((result, index) => {
+                    const approvalPercentage = result.final_total > 0 ? (result.final_yes / result.final_total) * 100 : 0;
+                    const isApproved = result.approved;
+                    const candidate = analytics.candidates.find(c => c.id === result.candidate_id);
+                    
+                    return (
+                      <div key={result.candidate_id} style={{ 
+                        padding: '0.75rem', 
+                        background: 'var(--bg)', 
+                        borderRadius: '4px',
+                        border: '1px solid var(--border)',
+                        borderLeft: isApproved ? '4px solid var(--success)' : '4px solid var(--danger)'
+                      }}>
+                        <div className="row-m" style={{ alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                          <div style={{ fontWeight: '600' }}>
+                            #{index + 1} {candidate?.name || result.candidate_name}
+                          </div>
+                          <div style={{ 
+                            fontWeight: 'bold',
+                            color: isApproved ? 'var(--success)' : 'var(--danger)',
+                            fontSize: '0.9rem'
+                          }}>
+                            {approvalPercentage.toFixed(1)}%
+                          </div>
+                        </div>
+                        <div style={{ color: 'var(--muted)', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
+                          {result.final_yes} Yes / {result.final_no} No ({result.final_total} total votes)
+                        </div>
+                        <div style={{ 
+                          height: '4px', 
+                          backgroundColor: 'var(--bg-elev)', 
+                          borderRadius: '2px',
+                          overflow: 'hidden'
+                        }}>
+                          <div style={{ 
+                            width: `${approvalPercentage}%`, 
+                            height: '100%', 
+                            backgroundColor: isApproved ? '#10b981' : '#ef4444',
+                            transition: 'width 0.3s ease'
+                          }} />
+                        </div>
+                        {isApproved && (
+                          <div style={{ 
+                            marginTop: '0.25rem',
+                            color: 'var(--success)',
+                            fontSize: '0.75rem',
+                            fontWeight: '600'
+                          }}>
+                            ✓ APPROVED
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                
+                {/* Cutoff line */}
+                {calculatedResults.some(r => r.approved) && calculatedResults.some(r => !r.approved) && (
+                  <div style={{ 
+                    padding: '0.5rem',
+                    background: 'var(--bg-elev)',
+                    borderRadius: '4px',
+                    border: '1px solid var(--border)',
+                    textAlign: 'center',
+                    marginTop: '0.5rem',
+                    marginBottom: '0.5rem'
+                  }}>
+                    <div style={{ 
+                      color: 'var(--muted)', 
+                      fontSize: '0.8rem',
+                      fontWeight: '600'
+                    }}>
+                      Approval Threshold: {approvalThreshold}%
+                    </div>
+                  </div>
+                )}
+              </div>
+            </details>
           </div>
         )}
       </div>
