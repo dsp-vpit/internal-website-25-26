@@ -76,6 +76,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
+        <title>BK Member Site</title>
+        <meta name="description" content="Business Fraternity Member Management System" />
         <link rel="icon" href="/bkbp.png" />
         <link rel="apple-touch-icon" href="/bkbp.png" />
       </head>
