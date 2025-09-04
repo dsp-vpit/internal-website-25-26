@@ -1,0 +1,25 @@
+{
+  "type": "exec",
+  "date": "2024-12-25",
+  "positions": [
+    {
+      "name": "President",
+      "candidates": [
+        {
+          "name": "Alice Johnson"
+        },
+        {
+          "name": "Bob Smith"
+        }
+      ]
+    },
+    {
+      "name": "Vice President",
+      "candidates": [
+        {
+          "name": "Charlie Brown"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "type": "member",
+  "date": "2024-12-10",
+  "candidates": [
+    {
+      "name": "John Doe",
+      "major": "Computer Science",
+      "grad_year": "2026"
+    },
+    {
+      "name": "Jane Smith",
+      "major": "Engineering",
+      "grad_year": "2027"
+    },
+    {
+      "name": "Bob Wilson",
+      "major": "Physics",
+      "grad_year": "2026"
+    }
+  ]
+}

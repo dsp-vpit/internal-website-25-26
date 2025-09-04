@@ -17,6 +17,7 @@ export default function DashboardPage() {
   const { user, loading } = useUser();
   const router = useRouter();
   const [professionalResourcesExpanded, setProfessionalResourcesExpanded] = useState(false);
+  const [alumniDirectoryExpanded, setAlumniDirectoryExpanded] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -44,8 +45,12 @@ export default function DashboardPage() {
     window.open('https://your-member-forms-url.com', '_blank');
   };
 
+  const handleActiveBrotherDirectory = () => {
+    window.open('https://docs.google.com/spreadsheets/d/1avwtgU98HSyuAivtc6PgnYH6dTAxJBB-RKPI_3S6pDM/edit?usp=sharing', '_blank');
+  };
+
   const handleAlumniDirectory = () => {
-    window.open('https://your-alumni-directory-url.com', '_blank');
+    window.open('https://docs.google.com/spreadsheets/d/1zQea__f9y5-PuLp4a617uEvHrGu3fXYT0x7e--U9nB4/edit?usp=sharing', '_blank');
   };
 
   if (loading || !user) return null;
@@ -322,27 +327,19 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Member Forms Button */}
+          {/* Member Forms Button - Coming Soon */}
           <div 
             className="card" 
             style={{ 
               padding: '0',
-              cursor: 'pointer',
+              cursor: 'not-allowed',
               overflow: 'hidden',
               position: 'relative',
-              background: 'linear-gradient(135deg, #553c9a 0%, #2d3748 100%)',
+              background: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
               border: 'none',
               transition: 'all 0.3s ease',
-              boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)'
-            }}
-            onClick={handleMemberForms}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.3)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+              boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
+              opacity: 0.7
             }}
           >
             <div style={{
@@ -372,10 +369,24 @@ export default function DashboardPage() {
                 }}>
                   Submit applications, requests, and official documents
                 </p>
+                <div style={{
+                  marginTop: '0.75rem',
+                  padding: '0.25rem 0.75rem',
+                  background: 'rgba(255,255,255,0.2)',
+                  borderRadius: '20px',
+                  display: 'inline-block',
+                  fontSize: '0.8rem',
+                  fontWeight: '600',
+                  color: 'white',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                  border: '1px solid rgba(255,255,255,0.3)'
+                }}>
+                  Coming Soon
+                </div>
               </div>
               <div style={{
                 fontSize: '2.5rem',
-                color: 'rgba(255,255,255,0.8)',
+                color: 'rgba(255,255,255,0.6)',
                 textShadow: '0 2px 4px rgba(0,0,0,0.3)'
               }}>
                 <FaClipboardList />
@@ -383,65 +394,135 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Alumni/Bro Directory Button */}
-          <div 
-            className="card" 
-            style={{ 
-              padding: '0',
-              cursor: 'pointer',
-              overflow: 'hidden',
-              position: 'relative',
-              background: 'linear-gradient(135deg, #553c9a 0%, #2d3748 100%)',
-              border: 'none',
-              transition: 'all 0.3s ease',
-              boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)'
-            }}
-            onClick={handleAlumniDirectory}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.3)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
-            }}
-          >
-            <div style={{
-              backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Cdefs%3E%3Cpattern id=\'diagonal\' width=\'20\' height=\'20\' patternUnits=\'userSpaceOnUse\'%3E%3Cpath d=\'M 0 20 L 20 0\' fill=\'none\' stroke=\'rgba(255,255,255,0.03)\' stroke-width=\'0.5\'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width=\'100\' height=\'100\' fill=\'url(%23diagonal)\'/%3E%3C/svg%3E")',
-              backgroundSize: 'cover',
-              padding: '2rem',
-              position: 'relative',
-              minHeight: '120px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <div style={{ zIndex: 2 }}>
-                <div className="title" style={{ 
-                  color: 'white', 
-                  marginBottom: '0.5rem',
-                  fontSize: '1.5rem',
+          {/* Alumni/Bro Directory Dropdown */}
+          <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
+            <div 
+              style={{ 
+                padding: '0',
+                cursor: 'pointer',
+                overflow: 'hidden',
+                position: 'relative',
+                background: 'linear-gradient(135deg, #553c9a 0%, #2d3748 100%)',
+                border: 'none',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)'
+              }}
+              onClick={() => setAlumniDirectoryExpanded(!alumniDirectoryExpanded)}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+              }}
+            >
+              <div style={{
+                backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Cdefs%3E%3Cpattern id=\'diagonal\' width=\'20\' height=\'20\' patternUnits=\'userSpaceOnUse\'%3E%3Cpath d=\'M 0 20 L 20 0\' fill=\'none\' stroke=\'rgba(255,255,255,0.03)\' stroke-width=\'0.5\'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width=\'100\' height=\'100\' fill=\'url(%23diagonal)\'/%3E%3C/svg%3E")',
+                backgroundSize: 'cover',
+                padding: '2rem',
+                position: 'relative',
+                minHeight: '120px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <div style={{ zIndex: 2 }}>
+                  <div className="title" style={{ 
+                    color: 'white', 
+                    marginBottom: '0.5rem',
+                    fontSize: '1.5rem',
+                    textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                  }}>
+                    Alumni/Bro Directory
+                  </div>
+                  <p style={{ 
+                    color: 'rgba(255,255,255,0.9)', 
+                    margin: 0,
+                    fontSize: '0.95rem',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                  }}>
+                    Connect with brothers and alumni network
+                  </p>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  fontSize: '2.5rem',
+                  color: 'rgba(255,255,255,0.8)',
                   textShadow: '0 2px 4px rgba(0,0,0,0.3)'
                 }}>
-                  Alumni/Bro Directory
+                  <FaUsers />
+                  {alumniDirectoryExpanded ? <FaChevronDown /> : <FaChevronRight />}
                 </div>
-                <p style={{ 
-                  color: 'rgba(255,255,255,0.9)', 
-                  margin: 0,
-                  fontSize: '0.95rem',
-                  textShadow: '0 1px 2px rgba(0,0,0,0.3)'
-                }}>
-                  Connect with brothers and alumni network
-                </p>
-              </div>
-              <div style={{
-                fontSize: '2.5rem',
-                color: 'rgba(255,255,255,0.8)',
-                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-              }}>
-                <FaUsers />
               </div>
             </div>
+            
+            {/* Alumni/Bro Directory Dropdown Content */}
+            {alumniDirectoryExpanded && (
+              <div style={{
+                background: 'var(--bg-elev)',
+                borderTop: '1px solid var(--border)',
+                padding: '1rem'
+              }}>
+                <div className="stack-s" style={{ gap: '0.75rem' }}>
+                  <div 
+                    className="card" 
+                    style={{ 
+                      padding: '1rem',
+                      cursor: 'pointer',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onClick={handleActiveBrotherDirectory}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'var(--bg-elev)';
+                      e.currentTarget.style.borderColor = 'var(--accent)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'var(--bg)';
+                      e.currentTarget.style.borderColor = 'var(--border)';
+                    }}
+                  >
+                    <div className="title" style={{ fontSize: '1.1rem', marginBottom: '0.25rem' }}>
+                      Active Brother Directory
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--muted)' }}>
+                      Current active brothers contact information and details
+                    </p>
+                  </div>
+                  
+                  <div 
+                    className="card" 
+                    style={{ 
+                      padding: '1rem',
+                      cursor: 'pointer',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onClick={handleAlumniDirectory}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'var(--bg-elev)';
+                      e.currentTarget.style.borderColor = 'var(--accent)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'var(--bg)';
+                      e.currentTarget.style.borderColor = 'var(--border)';
+                    }}
+                  >
+                    <div className="title" style={{ fontSize: '1.1rem', marginBottom: '0.25rem' }}>
+                      Alumni Directory
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--muted)' }}>
+                      Alumni brothers contact information and professional details
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

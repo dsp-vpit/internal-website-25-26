@@ -1,0 +1,67 @@
+{
+  "type": "exec",
+  "date": "2024-12-20",
+  "positions": [
+    {
+      "name": "President",
+      "candidates": [
+        {
+          "name": "Jennifer Wilson"
+        },
+        {
+          "name": "Robert Thompson"
+        }
+      ]
+    },
+    {
+      "name": "Vice President",
+      "candidates": [
+        {
+          "name": "Lisa Anderson"
+        },
+        {
+          "name": "James Martinez"
+        },
+        {
+          "name": "Amanda Lee"
+        }
+      ]
+    },
+    {
+      "name": "Secretary",
+      "candidates": [
+        {
+          "name": "Kevin Brown"
+        },
+        {
+          "name": "Rachel Green"
+        }
+      ]
+    },
+    {
+      "name": "Treasurer",
+      "candidates": [
+        {
+          "name": "Daniel White"
+        },
+        {
+          "name": "Sophia Garcia"
+        },
+        {
+          "name": "Christopher Taylor"
+        }
+      ]
+    },
+    {
+      "name": "Public Relations",
+      "candidates": [
+        {
+          "name": "Nicole Adams"
+        },
+        {
+          "name": "Matthew Clark"
+        }
+      ]
+    }
+  ]
+}

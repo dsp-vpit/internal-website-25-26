@@ -1,0 +1,36 @@
+{
+  "type": "member",
+  "date": "2024-12-15",
+  "candidates": [
+    {
+      "name": "Alex Johnson",
+      "major": "Computer Science",
+      "grad_year": "2026",
+      "gpa": "3.8"
+    },
+    {
+      "name": "Sarah Chen",
+      "major": "Electrical Engineering",
+      "grad_year": "2027",
+      "gpa": "3.9"
+    },
+    {
+      "name": "Michael Rodriguez",
+      "major": "Mechanical Engineering",
+      "grad_year": "2026",
+      "gpa": "3.7"
+    },
+    {
+      "name": "Emily Davis",
+      "major": "Computer Science",
+      "grad_year": "2027",
+      "gpa": "3.85"
+    },
+    {
+      "name": "David Kim",
+      "major": "Physics",
+      "grad_year": "2026",
+      "gpa": "3.75"
+    }
+  ]
+}
