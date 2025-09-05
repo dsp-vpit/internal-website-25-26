@@ -51,13 +51,25 @@ export default function VotingPage() {
           .single();
         
         if (eventError) {
-          console.error('Error fetching event:', eventError);
-          setError('Failed to load event data');
+          // Only log actual errors, not "no rows found" (PGRST116)
+          if (eventError.code !== 'PGRST116') {
+            console.error('Error fetching event:', eventError);
+            setError('Failed to load event data');
+            return;
+          }
+          // PGRST116 means no rows found, which is normal when no active event
+          setEvent(null);
+          setCandidate(null);
+          setCandidates([]);
+          setError(null);
           return;
         }
         
         if (!eventData) {
-          setError('No active voting event available.');
+          setEvent(null);
+          setCandidate(null);
+          setCandidates([]);
+          setError(null);
           return;
         }
 
