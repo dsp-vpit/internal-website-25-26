@@ -384,11 +384,22 @@ export default function VotingPage() {
 
       {/* Candidate Information */}
       <div className="card" style={{ padding: '2rem' }}>
-        <div className="title" style={{ marginBottom: '1.5rem', fontSize: '1.75rem' }}>
-          {candidate.name}
-        </div>
-        
-        <div className="stack-m">
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'flex-start', 
+          gap: '2rem',
+          flexWrap: 'wrap'
+        }}>
+          {/* Left side - Candidate details */}
+          <div style={{ flex: 1, minWidth: '300px' }}>
+            <div className="title" style={{ 
+              marginBottom: '1.5rem', 
+              fontSize: '1.75rem'
+            }}>
+              {candidate.name}
+            </div>
+            
+            <div className="stack-m">
           {candidate.major && (
             <div className="row-m">
               <span style={{ color: 'var(--muted)', minWidth: '120px' }}>Major:</span>
@@ -414,6 +425,35 @@ export default function VotingPage() {
             <div className="row-m">
               <span style={{ color: 'var(--muted)', minWidth: '120px' }}>Position:</span>
               <span style={{ fontWeight: '600' }}>{candidate.position}</span>
+            </div>
+          )}
+            </div>
+          </div>
+          
+          {/* Right side - Candidate image */}
+          {candidate.image_url && (
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center',
+              alignItems: 'center',
+              minWidth: '200px'
+            }}>
+              <img
+                src={candidate.image_url}
+                alt={`${candidate.name} photo`}
+                style={{
+                  width: '200px',
+                  height: '200px',
+                  objectFit: 'cover',
+                  borderRadius: '12px',
+                  border: '2px solid var(--border)',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                }}
+                onError={(e) => {
+                  // Hide image if it fails to load
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             </div>
           )}
         </div>

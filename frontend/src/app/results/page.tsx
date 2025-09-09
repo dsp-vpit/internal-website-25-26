@@ -12,6 +12,7 @@ interface Candidate {
   grad_year?: string;
   gpa?: string;
   position?: string;
+  image_url?: string;
   order_index: number;
 }
 
@@ -386,11 +387,32 @@ export default function ResultsPage() {
                   padding: '0.5rem', 
                   background: 'var(--bg)', 
                   borderRadius: '4px',
-                  border: '1px solid var(--border)'
+                  border: '1px solid var(--border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem'
                 }}>
-                  <div style={{ fontWeight: '600' }}>#{index + 1} {candidate.name}</div>
-                  <div style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>
-                    {candidate.major} • {candidate.grad_year} • GPA: {candidate.gpa}
+                  {candidate.image_url && (
+                    <img
+                      src={candidate.image_url}
+                      alt={`${candidate.name} photo`}
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        objectFit: 'cover',
+                        borderRadius: '4px',
+                        border: '1px solid var(--border)'
+                      }}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  )}
+                  <div>
+                    <div style={{ fontWeight: '600' }}>#{index + 1} {candidate.name}</div>
+                    <div style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>
+                      {candidate.major} • {candidate.grad_year} • GPA: {candidate.gpa}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -598,6 +620,32 @@ export default function ResultsPage() {
                     </span>
                   )}
                 </div>
+
+                {/* Candidate Image */}
+                {candidate.image_url && (
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    marginBottom: '1rem' 
+                  }}>
+                    <img
+                      src={candidate.image_url}
+                      alt={`${candidate.name} photo`}
+                      style={{
+                        width: '120px',
+                        height: '120px',
+                        objectFit: 'cover',
+                        borderRadius: '8px',
+                        border: '2px solid var(--border)',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                      }}
+                      onError={(e) => {
+                        // Hide image if it fails to load
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
 
                 {/* Candidate Info */}
                 <div className="row-m" style={{ gap: '2rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>

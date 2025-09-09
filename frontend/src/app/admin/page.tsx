@@ -284,7 +284,11 @@ export default function AdminPage() {
       // Insert candidates with order_index
       if (parsedData.type === 'member') {
         const candidates = parsedData.candidates.map((c: any, index: number) => ({ 
-          ...c, 
+          name: c.name,
+          major: c.major,
+          grad_year: c.grad_year,
+          gpa: c.gpa,
+          image_url: c.image_url || null,
           event_id: eventId,
           order_index: index
         }));
@@ -297,7 +301,8 @@ export default function AdminPage() {
           pos.candidates.forEach((c: any) => {
             allCandidates.push({ 
               name: c.name, 
-              position: pos.name, 
+              position: pos.name,
+              image_url: c.image_url || null,
               event_id: eventId,
               order_index: orderIndex++
             });
@@ -1053,7 +1058,22 @@ export default function AdminPage() {
           <textarea
             value={jsonInput}
             onChange={e => setJsonInput(e.target.value)}
-            placeholder='Paste event/candidate JSON here'
+            placeholder={`Paste event/candidate JSON here
+
+Example format:
+{
+  "type": "member",
+  "date": "2024-12-15",
+  "candidates": [
+    {
+      "name": "Alex Johnson",
+      "major": "Computer Science",
+      "grad_year": "2026",
+      "gpa": "3.8",
+      "image_url": "https://example.com/photos/alex-johnson.jpg"
+    }
+  ]
+}`}
             rows={10}
             className="input"
             style={{ fontFamily: 'monospace', resize: 'vertical' }}
