@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 import { supabase } from '../../lib/supabaseClient';
-import { FaChartBar, FaUsers, FaCheckCircle, FaTimesCircle, FaMinusCircle } from 'react-icons/fa';
+import { FaChartBar, FaUsers, FaCheckCircle, FaTimesCircle, FaMinusCircle, FaDownload, FaFileCsv, FaFileAlt } from 'react-icons/fa';
 
 interface Candidate {
   id: string;
@@ -72,6 +72,7 @@ export default function ResultsPage() {
   const [updatingThreshold, setUpdatingThreshold] = useState(false);
   const [thresholdInput, setThresholdInput] = useState('85');
   const [calculatedResults, setCalculatedResults] = useState<Result[]>([]);
+  const [exporting, setExporting] = useState(false);
 
   // Helper function to format date without timezone issues
   const formatDate = (dateString: string) => {
@@ -250,6 +251,293 @@ export default function ResultsPage() {
     }
   };
 
+  // Export functionality
+  const exportToCSV = () => {
+    if (!event || !analytics || !calculatedResults) return;
+
+    setExporting(true);
+    try {
+      // Prepare CSV data
+      const csvData = [];
+      
+      // Header row
+      csvData.push([
+        'Event Name',
+        'Event Type',
+        'Date',
+        'Phase',
+        'Approval Threshold (%)',
+        'Candidate Name',
+        'Major',
+        'Grad Year',
+        'GPA',
+        'Position',
+        'Opinion Yes',
+        'Opinion No',
+        'Opinion Abstain',
+        'Opinion Total',
+        'Final Yes',
+        'Final No',
+        'Final Total',
+        'Final Approval %',
+        'Approved',
+        'Voter Names (Final Votes)'
+      ]);
+
+      // Data rows
+      calculatedResults.forEach((result) => {
+        const candidate = analytics.candidates.find(c => c.id === result.candidate_id);
+        const finalApprovalPercent = result.final_total > 0 ? 
+          ((result.final_yes / result.final_total) * 100).toFixed(1) : '0.0';
+        
+        // Get voter names for final votes
+        const finalVoters = analytics.voterDetails
+          .filter(voter => 
+            voter.votes.find(v => 
+              v.candidate_id === result.candidate_id && v.vote_value === 'yes'
+            )
+          )
+          .map(voter => voter.name)
+          .join('; ');
+
+        csvData.push([
+          event.event_name || (event.type === 'member' ? 'New Member Voting' : 'Executive Committee'),
+          event.type,
+          formatDate(event.date),
+          event.phase,
+          approvalThreshold.toString(),
+          candidate?.name || result.candidate_name,
+          candidate?.major || '',
+          candidate?.grad_year || '',
+          candidate?.gpa || '',
+          candidate?.position || '',
+          result.opinion_yes.toString(),
+          result.opinion_no.toString(),
+          result.opinion_abstain.toString(),
+          result.opinion_total.toString(),
+          result.final_yes.toString(),
+          result.final_no.toString(),
+          result.final_total.toString(),
+          finalApprovalPercent,
+          result.approved ? 'Yes' : 'No',
+          finalVoters
+        ]);
+      });
+
+      // Convert to CSV string
+      const csvContent = csvData.map(row => 
+        row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+      ).join('\n');
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `voting-results-${event.event_name || event.type}-${formatDate(event.date).replace(/\//g, '-')}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      alert('Failed to export CSV file');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const exportToJSON = () => {
+    if (!event || !analytics || !calculatedResults) return;
+
+    setExporting(true);
+    try {
+      const exportData = {
+        event: {
+          id: event.id,
+          name: event.event_name || (event.type === 'member' ? 'New Member Voting' : 'Executive Committee'),
+          type: event.type,
+          date: event.date,
+          formattedDate: formatDate(event.date),
+          phase: event.phase,
+          approvalThreshold: approvalThreshold
+        },
+        summary: {
+          totalCandidates: analytics.totalCandidates,
+          totalVoters: analytics.totalVoters,
+          approvedCount: analytics.approvedCount
+        },
+        candidates: analytics.candidates.map(candidate => {
+          const result = calculatedResults.find(r => r.candidate_id === candidate.id);
+          const finalApprovalPercent = result && result.final_total > 0 ? 
+            (result.final_yes / result.final_total) * 100 : 0;
+          
+          return {
+            ...candidate,
+            results: result ? {
+              opinion: {
+                yes: result.opinion_yes,
+                no: result.opinion_no,
+                abstain: result.opinion_abstain,
+                total: result.opinion_total
+              },
+              final: {
+                yes: result.final_yes,
+                no: result.final_no,
+                total: result.final_total,
+                approvalPercent: finalApprovalPercent
+              },
+              approved: result.approved
+            } : null
+          };
+        }),
+        voters: analytics.voterDetails.map(voter => ({
+          id: voter.id,
+          name: voter.name,
+          votes: voter.votes.map(vote => ({
+            candidateName: vote.candidate_name,
+            voteValue: vote.vote_value
+          }))
+        })),
+        exportedAt: new Date().toISOString(),
+        exportedBy: user?.email || 'Unknown'
+      };
+
+      const jsonContent = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `voting-results-${event.event_name || event.type}-${formatDate(event.date).replace(/\//g, '-')}.json`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error exporting JSON:', error);
+      alert('Failed to export JSON file');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const exportToPDF = () => {
+    if (!event || !analytics || !calculatedResults) return;
+
+    setExporting(true);
+    try {
+      // Create a comprehensive HTML report
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Voting Results Report</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+            .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #8b5cf6; padding-bottom: 20px; }
+            .summary { display: flex; justify-content: space-around; margin: 20px 0; }
+            .summary-item { text-align: center; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+            .candidate { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+            .candidate-header { font-weight: bold; font-size: 1.2em; margin-bottom: 10px; }
+            .results { display: flex; gap: 20px; }
+            .opinion-results, .final-results { flex: 1; }
+            .vote-item { margin: 5px 0; }
+            .approved { color: #10b981; font-weight: bold; }
+            .not-approved { color: #ef4444; font-weight: bold; }
+            table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f5f5f5; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>${event.event_name || (event.type === 'member' ? 'New Member Voting Results' : 'Executive Committee Results')}</h1>
+            <p>Date: ${formatDate(event.date)} | Phase: ${event.phase} | Type: ${event.type}</p>
+            <p>Approval Threshold: ${approvalThreshold}%</p>
+          </div>
+          
+          <div class="summary">
+            <div class="summary-item">
+              <h3>${analytics.totalCandidates}</h3>
+              <p>Total Candidates</p>
+            </div>
+            <div class="summary-item">
+              <h3>${analytics.totalVoters}</h3>
+              <p>Total Voters</p>
+            </div>
+            ${event.type === 'member' ? `
+            <div class="summary-item">
+              <h3>${analytics.approvedCount}</h3>
+              <p>Approved</p>
+            </div>
+            ` : ''}
+          </div>
+
+          <h2>Detailed Results</h2>
+          ${calculatedResults.map((result, index) => {
+            const candidate = analytics.candidates.find(c => c.id === result.candidate_id);
+            const finalApprovalPercent = result.final_total > 0 ? 
+              ((result.final_yes / result.final_total) * 100).toFixed(1) : '0.0';
+            
+            return `
+              <div class="candidate">
+                <div class="candidate-header">
+                  #${index + 1} - ${candidate?.name || result.candidate_name}
+                  ${result.approved ? '<span class="approved">✓ APPROVED</span>' : '<span class="not-approved">✗ NOT APPROVED</span>'}
+                </div>
+                <p><strong>Major:</strong> ${candidate?.major || 'N/A'} | 
+                   <strong>Grad Year:</strong> ${candidate?.grad_year || 'N/A'} | 
+                   <strong>GPA:</strong> ${candidate?.gpa || 'N/A'}</p>
+                
+                <div class="results">
+                  <div class="opinion-results">
+                    <h4>Opinion Poll Results</h4>
+                    <div class="vote-item">Yes: ${result.opinion_yes} (${result.opinion_total > 0 ? Math.round((result.opinion_yes / result.opinion_total) * 100) : 0}%)</div>
+                    <div class="vote-item">No: ${result.opinion_no} (${result.opinion_total > 0 ? Math.round((result.opinion_no / result.opinion_total) * 100) : 0}%)</div>
+                    <div class="vote-item">Abstain: ${result.opinion_abstain} (${result.opinion_total > 0 ? Math.round((result.opinion_abstain / result.opinion_total) * 100) : 0}%)</div>
+                    <div class="vote-item"><strong>Total: ${result.opinion_total} votes</strong></div>
+                  </div>
+                  
+                  ${event.phase === 'final' ? `
+                  <div class="final-results">
+                    <h4>Final Vote Results</h4>
+                    <div class="vote-item">Yes: ${result.final_yes} (${result.final_total > 0 ? Math.round((result.final_yes / result.final_total) * 100) : 0}%)</div>
+                    <div class="vote-item">No: ${result.final_no} (${result.final_total > 0 ? Math.round((result.final_no / result.final_total) * 100) : 0}%)</div>
+                    <div class="vote-item"><strong>Total: ${result.final_total} votes</strong></div>
+                    <div class="vote-item"><strong>Approval: ${finalApprovalPercent}%</strong></div>
+                  </div>
+                  ` : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+
+          <div style="margin-top: 40px; text-align: center; color: #666; font-size: 0.9em;">
+            <p>Report generated on ${new Date().toLocaleString()} by ${user?.email || 'Unknown'}</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      // Open in new window for printing/saving as PDF
+      const newWindow = window.open('', '_blank');
+      if (newWindow) {
+        newWindow.document.write(htmlContent);
+        newWindow.document.close();
+        newWindow.focus();
+        // Trigger print dialog
+        setTimeout(() => {
+          newWindow.print();
+        }, 500);
+      }
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      alert('Failed to export PDF');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (!user) {
     return (
       <div className="stack-l" style={{ placeItems: 'center', minHeight: 'calc(100vh - 200px)' }}>
@@ -300,9 +588,43 @@ export default function ResultsPage() {
     <div className="stack-l">
       {/* Event Header */}
       <div className="card" style={{ padding: '1.5rem' }}>
-        <div className="title" style={{ marginBottom: '1rem' }}>
-          {event.event_name || (event.type === 'member' ? 'New Member Voting Results' : 'Executive Committee Results')}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+          <div className="title">
+            {event.event_name || (event.type === 'member' ? 'New Member Voting Results' : 'Executive Committee Results')}
+          </div>
+          
+          {/* Export Buttons */}
+          <div className="row-m" style={{ gap: '0.5rem' }}>
+            <button 
+              className="btn btn-ghost" 
+              onClick={exportToCSV}
+              disabled={exporting}
+              style={{ fontSize: '0.85rem', padding: '0.5rem 0.75rem' }}
+            >
+              <FaFileCsv style={{ marginRight: '0.5rem' }} />
+              CSV
+            </button>
+            <button 
+              className="btn btn-ghost" 
+              onClick={exportToJSON}
+              disabled={exporting}
+              style={{ fontSize: '0.85rem', padding: '0.5rem 0.75rem' }}
+            >
+              <FaFileAlt style={{ marginRight: '0.5rem' }} />
+              JSON
+            </button>
+            <button 
+              className="btn btn-ghost" 
+              onClick={exportToPDF}
+              disabled={exporting}
+              style={{ fontSize: '0.85rem', padding: '0.5rem 0.75rem' }}
+            >
+              <FaDownload style={{ marginRight: '0.5rem' }} />
+              PDF
+            </button>
+          </div>
         </div>
+        
         <div className="row-m" style={{ color: 'var(--muted)' }}>
           <span className="mono">Date: {formatDate(event.date)}</span>
           <span className="mono">Phase: {event.phase === 'opinion' ? 'Opinion Poll' : 'Final Vote'}</span>

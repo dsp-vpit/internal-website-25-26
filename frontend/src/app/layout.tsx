@@ -37,6 +37,7 @@ function NavBar() {
         {user && <Link href="/voting" className="btn btn-ghost">Voting</Link>}
         {user?.is_admin && <Link href="/results" className="btn btn-ghost">Results</Link>}
         {user?.is_admin && <Link href="/admin" className="btn btn-ghost">Admin</Link>}
+        {user?.is_admin && <Link href="/admin/display" className="btn btn-ghost">Display</Link>}
         {user && <Link href="/logout" className="btn btn-danger">Logout</Link>}
         {!user && !loading && <Link href="/auth" className="btn btn-primary">Login</Link>}
       </div>
@@ -60,6 +61,7 @@ function NavBar() {
         {user && <Link href="/voting" className="btn btn-ghost" onClick={closeMobileMenu}>Voting</Link>}
         {user?.is_admin && <Link href="/results" className="btn btn-ghost" onClick={closeMobileMenu}>Results</Link>}
         {user?.is_admin && <Link href="/admin" className="btn btn-ghost" onClick={closeMobileMenu}>Admin</Link>}
+        {user?.is_admin && <Link href="/admin/display" className="btn btn-ghost" onClick={closeMobileMenu}>Display</Link>}
         {user && <Link href="/logout" className="btn btn-danger" onClick={closeMobileMenu}>Logout</Link>}
         {!user && !loading && <Link href="/auth" className="btn btn-primary" onClick={closeMobileMenu}>Login</Link>}
       </div>
@@ -81,7 +83,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" href="/bkbp.png" />
         <link rel="apple-touch-icon" href="/bkbp.png" />
       </head>
-      <body className="shell">
+      <body className="shell" suppressHydrationWarning={true}>
         <UserProvider>
           <NavBar />
           <main className="container">

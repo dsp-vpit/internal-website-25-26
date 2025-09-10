@@ -621,6 +621,12 @@ export default function AdminPage() {
           </button>
           <button 
             className="btn btn-ghost" 
+            onClick={() => router.push('/admin/display')}
+          >
+            Final Vote Display
+          </button>
+          <button 
+            className="btn btn-ghost" 
             onClick={() => router.push('/dashboard')}
           >
             Return to Dashboard
