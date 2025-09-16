@@ -289,6 +289,7 @@ export default function AdminPage() {
           grad_year: c.grad_year,
           gpa: c.gpa,
           image_url: c.image_url || null,
+          resume_url: c.resume_url || null,
           event_id: eventId,
           order_index: index
         }));
@@ -303,6 +304,7 @@ export default function AdminPage() {
               name: c.name, 
               position: pos.name,
               image_url: c.image_url || null,
+              resume_url: c.resume_url || null,
               event_id: eventId,
               order_index: orderIndex++
             });
@@ -1076,7 +1078,8 @@ Example format:
       "major": "Computer Science",
       "grad_year": "2026",
       "gpa": "3.8",
-      "image_url": "https://example.com/photos/alex-johnson.jpg"
+      "image_url": "https://example.com/photos/alex-johnson.jpg",
+      "resume_url": "https://example.com/resumes/alex-johnson-resume.pdf"
     }
   ]
 }`}

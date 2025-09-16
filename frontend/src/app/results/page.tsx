@@ -13,6 +13,7 @@ interface Candidate {
   gpa?: string;
   position?: string;
   image_url?: string;
+  resume_url?: string;
   order_index: number;
 }
 
@@ -272,6 +273,7 @@ export default function ResultsPage() {
         'Grad Year',
         'GPA',
         'Position',
+        'Resume URL',
         'Opinion Yes',
         'Opinion No',
         'Opinion Abstain',
@@ -311,6 +313,7 @@ export default function ResultsPage() {
           candidate?.grad_year || '',
           candidate?.gpa || '',
           candidate?.position || '',
+          candidate?.resume_url || '',
           result.opinion_yes.toString(),
           result.opinion_no.toString(),
           result.opinion_abstain.toString(),
@@ -488,6 +491,7 @@ export default function ResultsPage() {
                 <p><strong>Major:</strong> ${candidate?.major || 'N/A'} | 
                    <strong>Grad Year:</strong> ${candidate?.grad_year || 'N/A'} | 
                    <strong>GPA:</strong> ${candidate?.gpa || 'N/A'}</p>
+                ${candidate?.resume_url ? `<p><strong>Resume:</strong> <a href="${candidate.resume_url}" target="_blank">View Resume</a></p>` : ''}
                 
                 <div class="results">
                   <div class="opinion-results">
@@ -996,6 +1000,21 @@ export default function ResultsPage() {
                     </div>
                   )}
                 </div>
+
+                {/* Resume Link */}
+                {candidate.resume_url && (
+                  <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                    <a 
+                      href={candidate.resume_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="btn btn-ghost"
+                      style={{ minWidth: '120px', textDecoration: 'none' }}
+                    >
+                      Resume
+                    </a>
+                  </div>
+                )}
 
                 {/* Vote Results */}
                 <div className="row-m" style={{ gap: '2rem', flexWrap: 'wrap' }}>

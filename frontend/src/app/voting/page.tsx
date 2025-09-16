@@ -427,6 +427,20 @@ export default function VotingPage() {
               <span style={{ fontWeight: '600' }}>{candidate.position}</span>
             </div>
           )}
+          
+          {candidate.resume_url && (
+            <div className="row-m" style={{ marginTop: '1rem' }}>
+              <a 
+                href={candidate.resume_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="btn btn-ghost"
+                style={{ minWidth: '120px', textDecoration: 'none' }}
+              >
+                Resume
+              </a>
+            </div>
+          )}
             </div>
           </div>
           
