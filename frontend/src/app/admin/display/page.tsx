@@ -478,7 +478,7 @@ export default function DisplayPage() {
                     {currentCandidate.gpa && (
                       <div className="row-m">
                         <span style={{ color: 'var(--muted)', minWidth: '120px' }}>GPA:</span>
-                        <span>{currentCandidate.gpa}</span>
+                        <span>{parseFloat(currentCandidate.gpa).toFixed(2)}</span>
                       </div>
                     )}
                   </div>
@@ -514,6 +514,7 @@ export default function DisplayPage() {
                     boxShadow: '0 10px 30px var(--glow)'
                   }}>
                     <img
+                      key={`${currentCandidate.id}-${currentCandidate.image_url}`}
                       src={currentCandidate.image_url}
                       alt={currentCandidate.name}
                       style={{

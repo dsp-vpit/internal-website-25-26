@@ -984,7 +984,7 @@ export default function AdminPage() {
                             {result.candidate.gpa && (
                               <div className="row-m">
                                 <span style={{ color: 'var(--muted)', minWidth: '100px' }}>GPA:</span>
-                                <span>{result.candidate.gpa}</span>
+                                <span>{parseFloat(result.candidate.gpa).toFixed(2)}</span>
                               </div>
                             )}
                             {result.candidate.position && (

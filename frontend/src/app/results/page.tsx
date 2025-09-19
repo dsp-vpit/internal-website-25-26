@@ -490,7 +490,7 @@ export default function ResultsPage() {
                 </div>
                 <p><strong>Major:</strong> ${candidate?.major || 'N/A'} | 
                    <strong>Grad Year:</strong> ${candidate?.grad_year || 'N/A'} | 
-                   <strong>GPA:</strong> ${candidate?.gpa || 'N/A'}</p>
+                   <strong>GPA:</strong> ${candidate?.gpa ? parseFloat(candidate.gpa).toFixed(2) : 'N/A'}</p>
                 ${candidate?.resume_url ? `<p><strong>Resume:</strong> <a href="${candidate.resume_url}" target="_blank">View Resume</a></p>` : ''}
                 
                 <div class="results">

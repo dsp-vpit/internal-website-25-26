@@ -1,0 +1,316 @@
+{
+  "type": "member",
+  "date": "2025-09-15",
+  "candidates": [
+    {
+      "name": "Aarush Sen",
+      "major": "Business Administration",
+      "grad_year": "2029",
+      "gpa": "4.00",
+      "image_url": "https://i.imghippo.com/files/dSKU1779qFc.JPG",
+      "resume_url": "https://drive.google.com/open?id=1o_SUUWpBLYpQUet0ISLid4ZCM1cG4S5X"
+    },
+    {
+      "name": "Gina Singh",
+      "major": "Business Administration",
+      "grad_year": "2029",
+      "image_url": "https://i.imghippo.com/files/Ntd6661AuI.png",
+      "resume_url": "https://drive.google.com/open?id=1M4Jrpjg_54zCcr3yj5xiA7ookryufDVq"
+    },
+    {
+      "name": "Robert/Bobby Williams",
+      "major": "Economics",
+      "grad_year": "2028",
+      "gpa": "4.00",
+      "image_url": "https://i.imghippo.com/files/bT3745fDQ.png",
+      "resume_url": "https://drive.google.com/open?id=1GlAVxJ0bKhXjPezHYmKbTwysLjh1E-Wa"
+    },
+    {
+      "name": "Kennady Hughes",
+      "major": "Unspecified Business - potentially finance",
+      "grad_year": "2029",
+      "image_url": "https://i.imghippo.com/files/mqfX5921Oo.png",
+      "resume_url": "https://drive.google.com/file/d/1y9LEncTz6J97zhpk3nENHeAlG_OPKUO_/view?usp=drive_link"
+    },
+    {
+      "name": "Nikhil Sehgal",
+      "major": "Finance",
+      "grad_year": "2028",
+      "gpa": "4.00",
+      "image_url": "https://i.imghippo.com/files/Wmh5191wUk.jpg",
+      "resume_url": "https://drive.google.com/open?id=1Z8SrjG9OskzfIBx1Hw0wrgDQWiv3Nqtp"
+    },
+    {
+      "name": "Dana Hartley",
+      "major": "Finance",
+      "grad_year": "2029",
+      "image_url": "https://i.imghippo.com/files/Snq3473LyA.png",
+      "resume_url": "https://drive.google.com/open?id=1RKkpCBSnS9IzPFQhA4xz1N8AcjWFnmKE"
+    },
+    {
+      "name": "Ethan Appiah-Amaning",
+      "major": "BHP + Finance",
+      "grad_year": "2029",
+      "image_url": "https://i.imghippo.com/files/qha9176uRE.png",
+      "resume_url": "https://drive.google.com/open?id=1DXiFlT4tqGCC8QrsEfFlY85gzVKtq2RL"
+    },
+    {
+      "name": "Sofia Camacho",
+      "major": "Economics",
+      "grad_year": "2028",
+      "gpa": "4.00",
+      "image_url": "https://i.imghippo.com/files/GYaN6448pek.jpg",
+      "resume_url": "https://drive.google.com/open?id=1oM1pR3RnIu7at3j9yQyq94VGnJVBfiGj"
+    },
+    {
+      "name": "Roy Park",
+      "major": "Canfield Business Major + Finance",
+      "grad_year": "2029",
+      "image_url": "https://i.imghippo.com/files/yuJ1701Rr.png",
+      "resume_url": "https://drive.google.com/open?id=1yciSnmFQZ71WkUFm80-VMe9OvW3230bk"
+    },
+    {
+      "name": "Ivana Kovalska",
+      "major": "Finance",
+      "grad_year": "2029",
+      "image_url": "https://i.imghippo.com/files/nft5528Yc.jpg",
+      "resume_url": "https://drive.google.com/open?id=1-6bALqZfjNWKxK0qp4AYkaOB0uNIxPJq"
+    },
+    {
+      "name": "Tanya Bahety",
+      "major": "Finance + Data Science",
+      "grad_year": "2029",
+      "gpa": "4.00",
+      "image_url": "https://i.imghippo.com/files/AVOF4444GhQ.png",
+      "resume_url": "https://drive.google.com/open?id=1blHlXZXuKbRMgJy5K1QZO_9C49EB7IQo"
+    },
+    {
+      "name": "Aum Kanar",
+      "major": "Economics",
+      "grad_year": "2028",
+      "gpa": "4.0",
+      "image_url": "https://i.imghippo.com/files/SfS4772xo.JPG",
+      "resume_url": "https://drive.google.com/open?id=1kP7uNZcXEyCG_4pZshfBz6pVi1kRsqmq"
+    },
+    {
+      "name": "Adhit Eswaramoorthi",
+      "major": "Business",
+      "grad_year": "2029",
+      "image_url": "https://i.imghippo.com/files/Phg6317BI.jpg",
+      "resume_url": "https://drive.google.com/open?id=1nPxw837ndikcQ8s7w2DPVAcaBef3uYse"
+    },
+    {
+      "name": "Lavanya Kumar",
+      "major": "Unspecified Business",
+      "grad_year": "2029",
+      "image_url": "https://i.imghippo.com/files/npER1549wE.jpeg",
+      "resume_url": "https://drive.google.com/open?id=1sZcbJ3D59lxP4lOfZJm_zU8kcbjkqZCl"
+    },
+    {
+      "name": "Maehek Mehta",
+      "major": "Accounting + Finance",
+      "grad_year": "2028",
+      "image_url": "https://i.imghippo.com/files/Qey4015XQ.jpg",
+      "resume_url": "https://drive.google.com/open?id=1HHQVdbHOTkFg2kCo90JzINT7xUi6AvrL"
+    },
+    {
+      "name": "Aileen Wu",
+      "major": "Canfield BHP",
+      "grad_year": "2029",
+      "image_url": "https://i.imghippo.com/files/kRkN9985PH.png",
+      "resume_url": "https://drive.google.com/open?id=1U5ecF-yX4g8MBO2RqecxDKNRQ-FMuqQD"
+    },
+    {
+      "name": "Kavin Sridhar",
+      "major": "Finance",
+      "grad_year": "2029",
+      "gpa": "4.00",
+      "image_url": "https://i.imghippo.com/files/Az9098RmY.jpg",
+      "resume_url": "https://drive.google.com/open?id=1khtC1J_mXzvU5JTuzKcTzUUBVc_R4SKC"
+    },
+    {
+      "name": "Palak Thakkar",
+      "major": "Finance",
+      "grad_year": "2028",
+      "gpa": "3.98",
+      "image_url": "https://i.imghippo.com/files/jgT8402fbk.jpeg",
+      "resume_url": "https://drive.google.com/open?id=1Scb3Jd-sJCc31EnD378XpYzDkPp3VzZU"
+    },
+    {
+      "name": "Cami Hughes",
+      "major": "Unspecified Business/ Finance with a minor in Real Estate",
+      "grad_year": "2029",
+      "image_url": "https://i.imghippo.com/files/Dne6036DPE.jpeg",
+      "resume_url": "https://drive.google.com/open?id=1V2QgMdvIQH8Jkh7l2443M9u6jLCR0NEG"
+    },
+    {
+      "name": "Sanika Niranjan",
+      "major": "Intended Finance, Minor Marketing",
+      "grad_year": "2029",
+      "gpa": "4.00",
+      "image_url": "https://i.imghippo.com/files/kYy1868k.JPG",
+      "resume_url": "https://drive.google.com/open?id=187kSJM_XJ9KPewl7dX3j3Q_gmibb98d2"
+    },
+    {
+      "name": "Abhiram Bandi",
+      "major": "Finance",
+      "grad_year": "2029",
+      "gpa": "4.00",
+      "image_url": "https://drive.google.com/open?id=1mVLlqPUKqzMO3Tg63C0wzW6uvwi66JjQ",
+      "resume_url": "https://drive.google.com/open?id=1yK1wWXiwX-Th6YtmsaweBfgrhVPk8RLV"
+    },
+    {
+      "name": "Sanya Mohta",
+      "major": "Finance + Data Science",
+      "grad_year": "2029",
+      "image_url": "https://i.imghippo.com/files/HMa4325pFQ.png",
+      "resume_url": "https://drive.google.com/open?id=1lhgTE7-1p8Nu46l7Xlz1xSXKfR8bGy59"
+    },
+    {
+      "name": "Charlotte Sander",
+      "major": "Finance",
+      "grad_year": "2029",
+      "image_url": "https://i.imghippo.com/files/cRI2420Y.jpg",
+      "resume_url": "https://drive.google.com/open?id=1eUjYYSx5NDhw3TxtwMinJ5wtbca-mKE2"
+    },
+    {
+      "name": "Arjun Patil",
+      "major": "Business",
+      "grad_year": "2029",
+      "image_url": "https://i.imghippo.com/files/FH6808dfs.JPG",
+      "resume_url": "https://drive.google.com/open?id=1NBsD6cKQhssMwd6qq3YaieJJms3jJFRG"
+    },
+    {
+      "name": "Yoyo  Jiang",
+      "major": "Business Undeclared",
+      "grad_year": "2029",
+      "image_url": "https://i.imghippo.com/files/IJK8962qE.jpg",
+      "resume_url": "https://drive.google.com/open?id=1JQ_WZOcITZ5pdBxaZIzlq4F6GNdQsY-m"
+    },
+    {
+      "name": "ashita virani",
+      "major": "major: finance minor : wealth management",
+      "image_url": "https://i.imghippo.com/files/lDd9108FUo.jpg",
+      "resume_url": "https://drive.google.com/open?id=1Ko8zVjp6oBiOPSa4oIR-8ksgXLQsHB_K"
+    },
+    {
+      "name": "Areeb Khan",
+      "major": "Finance",
+      "grad_year": "2028",
+      "gpa": "3.93",
+      "image_url": "https://i.imghippo.com/files/Vqu6430fyc.jpg",
+      "resume_url": "https://drive.google.com/open?id=1HPs3X6krvJMnGEE4ffCVZUHJ1Dxu38hi"
+    },
+    {
+      "name": "Sahasra Gutta",
+      "major": "Unspecified Business",
+      "grad_year": "2029",
+      "gpa": "4.0",
+      "image_url": "https://i.imghippo.com/files/mYnY3061c.jpeg",
+      "resume_url": "https://drive.google.com/open?id=1aVK52MW_Cj4aQ-WCP5ccyQTv3vhtjWnw"
+    },
+    {
+      "name": "Rudhran (Rudy) Sathish",
+      "major": "Management",
+      "grad_year": "2029",
+      "image_url": "https://i.imghippo.com/files/x4859paY.jpg",
+      "resume_url": "https://drive.google.com/open?id=17nqI0CLPRzhLQyEIfJ2YR9tsP03ta2XN"
+    },
+    {
+      "name": "Benjamin Perez",
+      "major": "Finance",
+      "grad_year": "2027",
+      "gpa": "3.92",
+      "image_url": "https://i.imghippo.com/files/bG1956s.jpg",
+      "resume_url": "https://drive.google.com/open?id=1BLHqGwBHTKnql91AcWypreR62iYCtESA"
+    },
+    {
+      "name": "Devanshi Sharma",
+      "major": "Economics",
+      "grad_year": "2029",
+      "image_url": "https://i.imghippo.com/files/IR7679mQ.jpeg",
+      "resume_url": "https://drive.google.com/open?id=1JO5b92PkGuTMKaGIwsLqPx1x27CwWO0K"
+    },
+    {
+      "name": "Tamana Paykar",
+      "major": "Economics and Finance",
+      "gpa": "4.0",
+      "image_url": "https://i.imghippo.com/files/oaN6404kQE.png",
+      "resume_url": "https://drive.google.com/open?id=1DtFieq6L9diFLU7KWyofyI-AFBJdoFw6"
+    },
+    {
+      "name": "Anjali Kadimi",
+      "major": "Economics",
+      "grad_year": "2028",
+      "image_url": "https://i.imghippo.com/files/FzBk4123CQ.jpg",
+      "resume_url": "https://drive.google.com/open?id=1yZXuDyPkoJ04iod4rB35Krv1vaz0m8Tp"
+    },
+    {
+      "name": "Sohan Mekala",
+      "major": "Finance",
+      "grad_year": "2029",
+      "image_url": "https://i.imghippo.com/files/LNh3273yIg.jpg",
+      "resume_url": "https://drive.google.com/open?id=1_-ej2keQDMFkoqQcVJ6H0V36t70opwcU"
+    },
+    {
+      "name": "Jihan Kapur",
+      "major": "Business + Informatics (Intended)",
+      "grad_year": "2029",
+      "image_url": "https://i.imghippo.com/files/SuaC3148BZM.png",
+      "resume_url": "https://drive.google.com/open?id=1XSEj1eHT33ThqgpYQm-WaVY_eLUmq5bQ"
+    },
+    {
+      "name": "Asiye Akin",
+      "major": "Intended Major: Finance + Accounting",
+      "grad_year": "2029",
+      "gpa": "4.0",
+      "image_url": "https://i.imghippo.com/files/fxo8607nD.png",
+      "resume_url": "https://drive.google.com/open?id=1Kzifd8ZC_5Tn6l77z-amtmaLOrdPzX7L"
+    },
+    {
+      "name": "Shane Semien",
+      "major": "Unspecified Business - planning on Finance.",
+      "grad_year": "2029",
+      "gpa": "4.00",
+      "image_url": "https://i.imghippo.com/files/ggFy5591qCk.png",
+      "resume_url": "https://drive.google.com/open?id=1ryl0XTlssTUBt-H1peRXbAXDfqhCHOBI"
+    },
+    {
+      "name": "Arina Ni",
+      "major": "Finance",
+      "grad_year": "2027",
+      "gpa": "3.40",
+      "image_url": "https://i.imghippo.com/files/cFFH2650klY.jpg",
+      "resume_url": "https://drive.google.com/open?id=1c5eztoYHp49gmdjcIE44VZyCs7TVYE_y"
+    },
+    {
+      "name": "Kate Wang",
+      "major": "Finance",
+      "image_url": "https://i.imghippo.com/files/vYz3656qE.png",
+      "resume_url": "https://drive.google.com/open?id=1OFiY01HJ8RW00IiWzX1k_fJF81iYj2mP"
+    },
+    {
+      "name": "Sara Han",
+      "major": "Management Information Systems",
+      "grad_year": "2029",
+      "image_url": "https://i.imghippo.com/files/kVDi7741zkc.jpeg",
+      "resume_url": "https://drive.google.com/open?id=1mvoc8K2RCG_fNeGhUA6idVU1uK3Jq033"
+    },
+    {
+      "name": "Shree Bharwani",
+      "major": "Finance and Economics",
+      "grad_year": "2028",
+      "gpa": "3.90",
+      "image_url": "https://i.imghippo.com/files/GTAw9037gxA.JPG",
+      "resume_url": "https://drive.google.com/open?id=1OcbMJKz5Nb8XdQYtKkXjOGKHvZLTwGKH"
+    },
+    {
+      "name": "Shiroz Kazani",
+      "major": "Economics and Informatics",
+      "grad_year": "2027",
+      "gpa": "3.5",
+      "image_url": "https://i.imghippo.com/files/Cwx7200Foc.JPG",
+      "resume_url": "https://drive.google.com/open?id=1o-b3OAPBzH0H4oi9-OYSa3DOYzLLM5Kq"
+    }
+  ]
+}

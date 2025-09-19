@@ -162,7 +162,8 @@ export default function VotingPage() {
                 console.log('Setting new candidate:', newCurrentCandidate.name);
                 setEvent(eventData);
                 setPhase(eventData.phase || 'opinion');
-                setCandidate(newCurrentCandidate);
+                // Force re-render by creating a new object reference
+                setCandidate({ ...newCurrentCandidate });
                 setLastCandidateIndex(eventData.current_candidate_index);
                 setHasVoted(false); // Reset vote status for new candidate
                 setMessage(null);
@@ -417,7 +418,7 @@ export default function VotingPage() {
           {candidate.gpa && (
             <div className="row-m">
               <span style={{ color: 'var(--muted)', minWidth: '120px' }}>GPA:</span>
-              <span style={{ fontWeight: '600' }}>{candidate.gpa}</span>
+              <span style={{ fontWeight: '600' }}>{parseFloat(candidate.gpa).toFixed(2)}</span>
             </div>
           )}
           
@@ -453,6 +454,7 @@ export default function VotingPage() {
               minWidth: '200px'
             }}>
               <img
+                key={`${candidate.id}-${candidate.image_url}`}
                 src={candidate.image_url}
                 alt={`${candidate.name} photo`}
                 style={{
