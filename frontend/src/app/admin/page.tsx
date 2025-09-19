@@ -22,6 +22,7 @@ interface Candidate {
   major?: string;
   grad_year?: string;
   gpa?: string;
+  classification?: string;
   position?: string;
   event_id: string;
 }
@@ -288,6 +289,7 @@ export default function AdminPage() {
           major: c.major,
           grad_year: c.grad_year,
           gpa: c.gpa,
+          classification: c.classification,
           image_url: c.image_url || null,
           resume_url: c.resume_url || null,
           event_id: eventId,
@@ -303,6 +305,7 @@ export default function AdminPage() {
             allCandidates.push({ 
               name: c.name, 
               position: pos.name,
+              classification: c.classification,
               image_url: c.image_url || null,
               resume_url: c.resume_url || null,
               event_id: eventId,
@@ -981,6 +984,12 @@ export default function AdminPage() {
                                 <span>{result.candidate.grad_year}</span>
                               </div>
                             )}
+                            {result.candidate.classification && (
+                              <div className="row-m">
+                                <span style={{ color: 'var(--muted)', minWidth: '100px' }}>Classification:</span>
+                                <span>{result.candidate.classification}</span>
+                              </div>
+                            )}
                             {result.candidate.gpa && (
                               <div className="row-m">
                                 <span style={{ color: 'var(--muted)', minWidth: '100px' }}>GPA:</span>
@@ -1078,6 +1087,7 @@ Example format:
       "major": "Computer Science",
       "grad_year": "2026",
       "gpa": "3.8",
+      "classification": "sophomore",
       "image_url": "https://example.com/photos/alex-johnson.jpg",
       "resume_url": "https://example.com/resumes/alex-johnson-resume.pdf"
     }

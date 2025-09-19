@@ -11,6 +11,7 @@ interface Candidate {
   major?: string;
   grad_year?: string;
   gpa?: string;
+  classification?: string;
   position?: string;
   image_url?: string;
   resume_url?: string;
@@ -271,6 +272,7 @@ export default function ResultsPage() {
         'Candidate Name',
         'Major',
         'Grad Year',
+        'Classification',
         'GPA',
         'Position',
         'Resume URL',
@@ -311,6 +313,7 @@ export default function ResultsPage() {
           candidate?.name || result.candidate_name,
           candidate?.major || '',
           candidate?.grad_year || '',
+          candidate?.classification || '',
           candidate?.gpa || '',
           candidate?.position || '',
           candidate?.resume_url || '',
@@ -490,6 +493,7 @@ export default function ResultsPage() {
                 </div>
                 <p><strong>Major:</strong> ${candidate?.major || 'N/A'} | 
                    <strong>Grad Year:</strong> ${candidate?.grad_year || 'N/A'} | 
+                   <strong>Classification:</strong> ${candidate?.classification || 'N/A'} | 
                    <strong>GPA:</strong> ${candidate?.gpa ? parseFloat(candidate.gpa).toFixed(2) : 'N/A'}</p>
                 ${candidate?.resume_url ? `<p><strong>Resume:</strong> <a href="${candidate.resume_url}" target="_blank">View Resume</a></p>` : ''}
                 
@@ -737,7 +741,7 @@ export default function ResultsPage() {
                   <div>
                     <div style={{ fontWeight: '600' }}>#{index + 1} {candidate.name}</div>
                     <div style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>
-                      {candidate.major} • {candidate.grad_year} • GPA: {candidate.gpa}
+                      {candidate.major} • {candidate.grad_year} • {candidate.classification} • GPA: {candidate.gpa}
                     </div>
                   </div>
                 </div>

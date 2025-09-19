@@ -11,6 +11,7 @@ interface Candidate {
   major?: string;
   grad_year?: string;
   gpa?: string;
+  classification?: string;
   image_url?: string;
 }
 
@@ -472,6 +473,13 @@ export default function DisplayPage() {
                       <div className="row-m">
                         <span style={{ color: 'var(--muted)', minWidth: '120px' }}>Grad Year:</span>
                         <span>{currentCandidate.grad_year}</span>
+                      </div>
+                    )}
+                    
+                    {currentCandidate.classification && (
+                      <div className="row-m">
+                        <span style={{ color: 'var(--muted)', minWidth: '120px' }}>Classification:</span>
+                        <span>{currentCandidate.classification}</span>
                       </div>
                     )}
                     

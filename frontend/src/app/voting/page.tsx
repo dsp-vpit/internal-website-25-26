@@ -16,6 +16,20 @@ interface VoteData {
   is_anonymous: boolean;
 }
 
+interface Candidate {
+  id: string;
+  name: string;
+  major?: string;
+  grad_year?: string;
+  gpa?: string;
+  classification?: string;
+  position?: string;
+  image_url?: string;
+  resume_url?: string;
+  event_id: string;
+  order_index: number;
+}
+
 export default function VotingPage() {
   const { user, loading } = useUser();
   const [event, setEvent] = useState<any>(null);
@@ -412,6 +426,13 @@ export default function VotingPage() {
             <div className="row-m">
               <span style={{ color: 'var(--muted)', minWidth: '120px' }}>Grad Year:</span>
               <span style={{ fontWeight: '600' }}>{candidate.grad_year}</span>
+            </div>
+          )}
+          
+          {candidate.classification && (
+            <div className="row-m">
+              <span style={{ color: 'var(--muted)', minWidth: '120px' }}>Classification:</span>
+              <span style={{ fontWeight: '600' }}>{candidate.classification}</span>
             </div>
           )}
           
