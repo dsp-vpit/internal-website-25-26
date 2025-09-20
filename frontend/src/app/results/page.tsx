@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 import { supabase } from '../../lib/supabaseClient';
+import { fetchAllVotes } from '../../lib/voteUtils';
 import { FaChartBar, FaUsers, FaCheckCircle, FaTimesCircle, FaMinusCircle, FaDownload, FaFileCsv, FaFileAlt } from 'react-icons/fa';
 
 interface Candidate {
@@ -124,61 +125,7 @@ export default function ResultsPage() {
         }
 
         // Fetch all votes for this event using pagination
-        console.log('Fetching votes for event:', eventData.id);
-        
-        // Try fetching without limit first to see total count
-        const { count: totalCount } = await supabase
-          .from('votes')
-          .select('*', { count: 'exact', head: true })
-          .eq('event_id', eventData.id);
-        
-        console.log('Total votes in database for this event:', totalCount);
-        
-        // Fetch all votes using pagination to bypass any limits
-        let allVotes: any[] = [];
-        let from = 0;
-        const batchSize = 1000;
-        
-        while (true) {
-          const { data: batchVotes, error: batchError } = await supabase
-            .from('votes')
-            .select('*')
-            .eq('event_id', eventData.id)
-            .range(from, from + batchSize - 1);
-          
-          if (batchError) {
-            console.error('Error fetching vote batch:', batchError);
-            break;
-          }
-          
-          if (!batchVotes || batchVotes.length === 0) {
-            break;
-          }
-          
-          allVotes = allVotes.concat(batchVotes);
-          console.log(`Fetched batch: ${batchVotes.length} votes (total so far: ${allVotes.length})`);
-          
-          if (batchVotes.length < batchSize) {
-            break; // Last batch
-          }
-          
-          from += batchSize;
-        }
-        
-        const votes = allVotes;
-        const votesError = null;
-        
-        console.log('Votes query result:', { 
-          dataLength: votes?.length || 0, 
-          totalInDB: totalCount,
-          error: votesError 
-        });
-
-        if (votesError) {
-          console.error('Error fetching votes:', votesError);
-          setLoading(false);
-          return;
-        }
+        const { votes, totalCount } = await fetchAllVotes(eventData.id, 'Results page');
 
         // Calculate results for each candidate
         console.log('Candidates:', candidates.length);

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '../../context/UserContext';
 import { supabase } from '../../../lib/supabaseClient';
+import { fetchAllVotes } from '../../../lib/voteUtils';
 
 interface Candidate {
   id: string;
@@ -105,14 +106,9 @@ export default function DisplayPage() {
 
         setCandidates(candidatesData);
 
-        // Get all votes for this event
-        const { data: votesData, error: votesError } = await supabase
-          .from('votes')
-          .select('*')
-          .eq('event_id', currentEvent.id);
-
-        if (votesError) throw votesError;
-        setVotes(votesData || []);
+        // Get all votes for this event using pagination
+        const { votes: allVotes, totalCount } = await fetchAllVotes(currentEvent.id, 'Display page');
+        setVotes(allVotes);
 
       } catch (err) {
         console.error('Error fetching display data:', err);

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '../context/UserContext';
 import { supabase } from '../../lib/supabaseClient';
+import { fetchAllVotes } from '../../lib/voteUtils';
 
 interface Vote {
   id: string;
@@ -511,13 +512,8 @@ export default function AdminPage() {
       
       if (candidatesError) throw candidatesError;
       
-      // Fetch votes
-      const { data: votesData, error: votesError } = await supabase
-        .from('votes')
-        .select('*')
-        .eq('event_id', eventId);
-      
-      if (votesError) throw votesError;
+      // Fetch votes using pagination
+      const { votes: votesData, totalCount } = await fetchAllVotes(eventId, 'Admin page');
       
       // Calculate results
       const results = candidatesData.map((candidate: Candidate) => {
