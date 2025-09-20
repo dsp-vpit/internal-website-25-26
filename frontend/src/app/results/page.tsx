@@ -90,17 +90,20 @@ export default function ResultsPage() {
       setLoading(true);
       try {
         // Get current active event
-        const { data: eventData, error: eventError } = await supabase
+        const { data: eventsData, error: eventError } = await supabase
           .from('events')
           .select('*')
           .eq('is_ended', false)
-          .single();
+          .order('created_at', { ascending: false })
+          .limit(1);
 
-        if (eventError || !eventData) {
+        if (eventError || !eventsData || eventsData.length === 0) {
           console.log('No active event found');
           setLoading(false);
           return;
         }
+
+        const eventData = eventsData[0];
 
         setEvent(eventData);
         const threshold = eventData.approval_threshold || 85;
@@ -120,11 +123,56 @@ export default function ResultsPage() {
           return;
         }
 
-        // Fetch all votes for this event
-        const { data: votes, error: votesError } = await supabase
+        // Fetch all votes for this event using pagination
+        console.log('Fetching votes for event:', eventData.id);
+        
+        // Try fetching without limit first to see total count
+        const { count: totalCount } = await supabase
           .from('votes')
-          .select('*')
+          .select('*', { count: 'exact', head: true })
           .eq('event_id', eventData.id);
+        
+        console.log('Total votes in database for this event:', totalCount);
+        
+        // Fetch all votes using pagination to bypass any limits
+        let allVotes: any[] = [];
+        let from = 0;
+        const batchSize = 1000;
+        
+        while (true) {
+          const { data: batchVotes, error: batchError } = await supabase
+            .from('votes')
+            .select('*')
+            .eq('event_id', eventData.id)
+            .range(from, from + batchSize - 1);
+          
+          if (batchError) {
+            console.error('Error fetching vote batch:', batchError);
+            break;
+          }
+          
+          if (!batchVotes || batchVotes.length === 0) {
+            break;
+          }
+          
+          allVotes = allVotes.concat(batchVotes);
+          console.log(`Fetched batch: ${batchVotes.length} votes (total so far: ${allVotes.length})`);
+          
+          if (batchVotes.length < batchSize) {
+            break; // Last batch
+          }
+          
+          from += batchSize;
+        }
+        
+        const votes = allVotes;
+        const votesError = null;
+        
+        console.log('Votes query result:', { 
+          dataLength: votes?.length || 0, 
+          totalInDB: totalCount,
+          error: votesError 
+        });
 
         if (votesError) {
           console.error('Error fetching votes:', votesError);
@@ -133,6 +181,13 @@ export default function ResultsPage() {
         }
 
         // Calculate results for each candidate
+        console.log('Candidates:', candidates.length);
+        console.log('Total votes fetched:', votes?.length || 0);
+        console.log('Vote breakdown by type:', {
+          opinion: votes?.filter(v => v.type === 'opinion').length || 0,
+          final: votes?.filter(v => v.type === 'final').length || 0
+        });
+        
         const calculatedResults: Result[] = candidates.map(candidate => {
           const candidateVotes = votes?.filter(vote => vote.candidate_id === candidate.id) || [];
           
@@ -153,6 +208,8 @@ export default function ResultsPage() {
           // Determine if approved (for new member events)
           const approved = eventData.type === 'member' && finalYesPercent >= approvalThreshold;
 
+          console.log(`Candidate ${candidate.name}: opinion=${opinionTotal} (${opinionYes}Y/${opinionNo}N/${opinionAbstain}A), final=${finalTotal} (${finalYes}Y/${finalNo}N)`);
+
           return {
             candidate_id: candidate.id,
             candidate_name: candidate.name,
@@ -172,6 +229,7 @@ export default function ResultsPage() {
 
         // Get voter details from profiles
         const voterIds = Array.from(new Set(votes?.map(vote => vote.user_id) || []));
+        console.log('Unique voter IDs:', voterIds.length);
         let voterNames: string[] = [];
         let voterDetails: AnalyticsData['voterDetails'] = [];
         
@@ -216,6 +274,13 @@ export default function ResultsPage() {
           candidates: candidates,
           voterNames: voterNames,
           voterDetails: voterDetails
+        });
+
+        console.log('Final analytics summary:', {
+          totalCandidates: candidates.length,
+          totalVoters: voterNames.length,
+          approvedCount,
+          calculatedResultsCount: calculatedResults.length
         });
 
       } catch (error) {
@@ -928,7 +993,11 @@ export default function ResultsPage() {
           {analytics.candidates.map((candidate, index) => {
             // Get the calculated results for this candidate
             const result = calculatedResults.find((r: Result) => r.candidate_id === candidate.id);
-            if (!result) return null;
+            console.log(`Rendering candidate ${candidate.name}, result:`, result);
+            if (!result) {
+              console.log(`No result found for candidate ${candidate.name}`);
+              return null;
+            }
 
             return (
               <div key={candidate.id} className="card" style={{ padding: '1.5rem', background: 'var(--bg-elev)' }}>
