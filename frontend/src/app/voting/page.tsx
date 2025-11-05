@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useUser } from '../context/UserContext';
 import { supabase } from '../../lib/supabaseClient';
+import ExecutiveVotingSection from './ExecutiveVotingSection';
 
 type VoteValue = 'yes' | 'no' | 'abstain';
 type VoteType = 'opinion' | 'final';
@@ -108,13 +109,21 @@ export default function VotingPage() {
         }
 
         setCandidates(candData);
-        const currentCandidate = candData[eventData.current_candidate_index] || null;
-        if (!currentCandidate) {
-          setError('No current candidate available');
-          return;
-        }
         
-        setCandidate(currentCandidate);
+        // For exec events, we don't need current_candidate_index
+        // For member events, we need to set the current candidate
+        if (eventData.type === 'exec') {
+          // Exec events: all candidates are shown at once, no current candidate needed
+          setCandidate(null);
+        } else {
+          // Member events: show one candidate at a time
+          const currentCandidate = candData[eventData.current_candidate_index] || null;
+          if (!currentCandidate) {
+            setError('No current candidate available');
+            return;
+          }
+          setCandidate(currentCandidate);
+        }
         
         // Update tracking variables for auto-refresh
         setLastEventId(eventData.id);
@@ -143,8 +152,9 @@ export default function VotingPage() {
         if (!eventError && eventData) {
           let needsUpdate = false;
           
-          // Check if candidate index has changed
-          if (eventData.current_candidate_index !== lastCandidateIndex) {
+          // For exec events, we don't check candidate index changes
+          // For member events, check if candidate index has changed
+          if (eventData.type === 'member' && eventData.current_candidate_index !== lastCandidateIndex) {
             console.log('Candidate index changed from', lastCandidateIndex, 'to', eventData.current_candidate_index);
             needsUpdate = true;
           }
@@ -167,23 +177,30 @@ export default function VotingPage() {
             
             if (!candError && candData && candData.length > 0) {
               console.log('Candidates fetched:', candData.length, 'candidates');
-              console.log('Current candidate index:', eventData.current_candidate_index);
-              console.log('Available candidates:', candData.map((c, i) => `${i}: ${c.name}`));
               
               setCandidates(candData);
-              const newCurrentCandidate = candData[eventData.current_candidate_index] || null;
-              if (newCurrentCandidate) {
-                console.log('Setting new candidate:', newCurrentCandidate.name);
-                setEvent(eventData);
-                setPhase(eventData.phase || 'opinion');
-                // Force re-render by creating a new object reference
-                setCandidate({ ...newCurrentCandidate });
-                setLastCandidateIndex(eventData.current_candidate_index);
-                setHasVoted(false); // Reset vote status for new candidate
-                setMessage(null);
-                setError(null);
+              setEvent(eventData);
+              setPhase(eventData.phase || 'opinion');
+              
+              // For exec events, we don't need to set current candidate
+              // For member events, set the current candidate
+              if (eventData.type === 'exec') {
+                setCandidate(null);
               } else {
-                console.error('No candidate found at index:', eventData.current_candidate_index);
+                console.log('Current candidate index:', eventData.current_candidate_index);
+                console.log('Available candidates:', candData.map((c, i) => `${i}: ${c.name}`));
+                const newCurrentCandidate = candData[eventData.current_candidate_index] || null;
+                if (newCurrentCandidate) {
+                  console.log('Setting new candidate:', newCurrentCandidate.name);
+                  // Force re-render by creating a new object reference
+                  setCandidate({ ...newCurrentCandidate });
+                  setLastCandidateIndex(eventData.current_candidate_index);
+                  setHasVoted(false); // Reset vote status for new candidate
+                  setMessage(null);
+                  setError(null);
+                } else {
+                  console.error('No candidate found at index:', eventData.current_candidate_index);
+                }
               }
             } else {
               console.error('Error fetching candidates:', candError);
@@ -206,10 +223,11 @@ export default function VotingPage() {
     };
   }, [user, event, lastCandidateIndex, phase]);
 
-  // Check if user has already voted for this candidate/phase
+  // Check if user has already voted for this candidate/phase (only for member events)
   useEffect(() => {
     const checkVote = async () => {
-      if (!user || !event || !candidate) return;
+      // Only check votes for member events (exec events handle voting differently)
+      if (!user || !event || !candidate || event.type === 'exec') return;
       
       try {
         const { data, error } = await supabase
@@ -371,13 +389,45 @@ export default function VotingPage() {
     );
   }
 
-  if (!event || !candidate) {
+  if (!event) {
     return (
       <div className="stack-l" style={{ placeItems: 'center', minHeight: 'calc(100vh - 200px)' }}>
         <div className="card" style={{ padding: '2rem', textAlign: 'center' }}>
           <div className="title">No Active Event</div>
           <p style={{ color: 'var(--muted)', marginTop: '1rem' }}>
-            There is currently no active voting event or candidate.
+            There is currently no active voting event.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // For exec events, render executive voting section
+  if (event.type === 'exec') {
+    if (candidates.length === 0) {
+      return (
+        <div className="stack-l" style={{ placeItems: 'center', minHeight: 'calc(100vh - 200px)' }}>
+          <div className="card" style={{ padding: '2rem', textAlign: 'center' }}>
+            <div className="title">No Candidates</div>
+            <p style={{ color: 'var(--muted)', marginTop: '1rem' }}>
+              No candidates found for this executive election.
+            </p>
+          </div>
+        </div>
+      );
+    }
+    
+    return <ExecutiveVotingSection event={{ ...event, current_candidate_index: event.current_candidate_index || 0 }} candidates={candidates} user={user} />;
+  }
+
+  // For member events, render existing member voting UI
+  if (!candidate) {
+    return (
+      <div className="stack-l" style={{ placeItems: 'center', minHeight: 'calc(100vh - 200px)' }}>
+        <div className="card" style={{ padding: '2rem', textAlign: 'center' }}>
+          <div className="title">No Active Candidate</div>
+          <p style={{ color: 'var(--muted)', marginTop: '1rem' }}>
+            There is currently no active candidate for this event.
           </p>
         </div>
       </div>

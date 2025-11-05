@@ -376,44 +376,134 @@ export default function AdminPage() {
     if (user && user.is_admin) fetchPastEvents();
   }, [user, currentEvent?.is_ended]); // refetch when current event status changes
 
-  // Advance to next candidate
+  // Helper function to get position groups for exec events
+  const getPositionGroups = (candidates: Candidate[]) => {
+    const groups = new Map<string, { candidates: Candidate[], firstIndex: number }>();
+    
+    candidates.forEach((candidate, index) => {
+      if (candidate.position) {
+        if (!groups.has(candidate.position)) {
+          groups.set(candidate.position, { candidates: [], firstIndex: index });
+        }
+        groups.get(candidate.position)!.candidates.push(candidate);
+      }
+    });
+    
+    return Array.from(groups.entries())
+      .map(([position, data]) => ({
+        position,
+        candidates: data.candidates,
+        firstIndex: data.firstIndex
+      }))
+      .sort((a, b) => a.firstIndex - b.firstIndex);
+  };
+
+  // Helper function to find current position index for exec events
+  const getCurrentPositionIndex = (currentIndex: number, positionGroups: ReturnType<typeof getPositionGroups>) => {
+    for (let i = 0; i < positionGroups.length; i++) {
+      const group = positionGroups[i];
+      const lastIndex = group.firstIndex + group.candidates.length - 1;
+      if (currentIndex >= group.firstIndex && currentIndex <= lastIndex) {
+        return i;
+      }
+    }
+    return 0;
+  };
+
+  // Advance to next candidate (or next position for exec events)
   const handleNextCandidate = async () => {
     if (!currentEvent || !candidates.length) return;
     setAdvancing(true);
-    const nextIndex = currentEvent.current_candidate_index + 1;
-    if (nextIndex >= candidates.length) {
-      setAdvancing(false);
-      alert('No more candidates.');
-      return;
-    }
-    const { error } = await supabase
-      .from('events')
-      .update({ current_candidate_index: nextIndex })
-      .eq('id', currentEvent.id);
-    if (!error) {
-      setCurrentEvent({ ...currentEvent, current_candidate_index: nextIndex });
-      setCurrentCandidate(candidates[nextIndex]);
+    
+    // For exec events, advance by position
+    if (currentEvent.type === 'exec') {
+      const positionGroups = getPositionGroups(candidates);
+      const currentPosIndex = getCurrentPositionIndex(currentEvent.current_candidate_index, positionGroups);
+      const nextPosIndex = currentPosIndex + 1;
+      
+      if (nextPosIndex >= positionGroups.length) {
+        setAdvancing(false);
+        alert('No more positions.');
+        return;
+      }
+      
+      const nextPositionGroup = positionGroups[nextPosIndex];
+      const nextIndex = nextPositionGroup.firstIndex;
+      
+      const { error } = await supabase
+        .from('events')
+        .update({ current_candidate_index: nextIndex })
+        .eq('id', currentEvent.id);
+      
+      if (!error) {
+        setCurrentEvent({ ...currentEvent, current_candidate_index: nextIndex });
+        setCurrentCandidate(candidates[nextIndex]);
+      }
+    } else {
+      // For member events, advance by candidate
+      const nextIndex = currentEvent.current_candidate_index + 1;
+      if (nextIndex >= candidates.length) {
+        setAdvancing(false);
+        alert('No more candidates.');
+        return;
+      }
+      const { error } = await supabase
+        .from('events')
+        .update({ current_candidate_index: nextIndex })
+        .eq('id', currentEvent.id);
+      if (!error) {
+        setCurrentEvent({ ...currentEvent, current_candidate_index: nextIndex });
+        setCurrentCandidate(candidates[nextIndex]);
+      }
     }
     setAdvancing(false);
   };
 
-  // Go to previous candidate
+  // Go to previous candidate (or previous position for exec events)
   const handlePreviousCandidate = async () => {
     if (!currentEvent || !candidates.length) return;
     setAdvancing(true);
-    const prevIndex = currentEvent.current_candidate_index - 1;
-    if (prevIndex < 0) {
-      setAdvancing(false);
-      alert('Already at the first candidate.');
-      return;
-    }
-    const { error } = await supabase
-      .from('events')
-      .update({ current_candidate_index: prevIndex })
-      .eq('id', currentEvent.id);
-    if (!error) {
-      setCurrentEvent({ ...currentEvent, current_candidate_index: prevIndex });
-      setCurrentCandidate(candidates[prevIndex]);
+    
+    // For exec events, go back by position
+    if (currentEvent.type === 'exec') {
+      const positionGroups = getPositionGroups(candidates);
+      const currentPosIndex = getCurrentPositionIndex(currentEvent.current_candidate_index, positionGroups);
+      const prevPosIndex = currentPosIndex - 1;
+      
+      if (prevPosIndex < 0) {
+        setAdvancing(false);
+        alert('Already at the first position.');
+        return;
+      }
+      
+      const prevPositionGroup = positionGroups[prevPosIndex];
+      const prevIndex = prevPositionGroup.firstIndex;
+      
+      const { error } = await supabase
+        .from('events')
+        .update({ current_candidate_index: prevIndex })
+        .eq('id', currentEvent.id);
+      
+      if (!error) {
+        setCurrentEvent({ ...currentEvent, current_candidate_index: prevIndex });
+        setCurrentCandidate(candidates[prevIndex]);
+      }
+    } else {
+      // For member events, go back by candidate
+      const prevIndex = currentEvent.current_candidate_index - 1;
+      if (prevIndex < 0) {
+        setAdvancing(false);
+        alert('Already at the first candidate.');
+        return;
+      }
+      const { error } = await supabase
+        .from('events')
+        .update({ current_candidate_index: prevIndex })
+        .eq('id', currentEvent.id);
+      if (!error) {
+        setCurrentEvent({ ...currentEvent, current_candidate_index: prevIndex });
+        setCurrentCandidate(candidates[prevIndex]);
+      }
     }
     setAdvancing(false);
   };

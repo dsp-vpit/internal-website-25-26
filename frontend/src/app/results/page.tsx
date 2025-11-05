@@ -34,11 +34,13 @@ interface Vote {
   candidate_id: string;
   type: 'opinion' | 'final';
   vote_value: 'yes' | 'no' | 'abstain';
+  position?: string;
 }
 
 interface Result {
   candidate_id: string;
   candidate_name: string;
+  position?: string;
   opinion_yes: number;
   opinion_no: number;
   opinion_abstain: number;
@@ -47,6 +49,16 @@ interface Result {
   final_no: number;
   final_total: number;
   approved: boolean;
+  vote_count?: number; // For exec events: number of votes received
+  vote_percentage?: number; // For exec events: percentage of votes
+  is_winner?: boolean; // For exec events: if this candidate won
+}
+
+interface ExecutiveResult {
+  position: string;
+  candidates: Result[];
+  total_votes: number;
+  winner?: Result;
 }
 
 interface AnalyticsData {
@@ -135,41 +147,107 @@ export default function ResultsPage() {
           final: votes?.filter(v => v.type === 'final').length || 0
         });
         
-        const calculatedResults: Result[] = candidates.map(candidate => {
-          const candidateVotes = votes?.filter(vote => vote.candidate_id === candidate.id) || [];
+        let calculatedResults: Result[] = [];
+        
+        // For exec events, calculate results grouped by position
+        if (eventData.type === 'exec') {
+          // Group candidates by position
+          const positionGroups = new Map<string, Candidate[]>();
+          candidates.forEach(candidate => {
+            if (candidate.position) {
+              if (!positionGroups.has(candidate.position)) {
+                positionGroups.set(candidate.position, []);
+              }
+              positionGroups.get(candidate.position)!.push(candidate);
+            }
+          });
           
-          const opinionVotes = candidateVotes.filter(vote => vote.type === 'opinion');
-          const finalVotes = candidateVotes.filter(vote => vote.type === 'final');
+          // Calculate results for each candidate within each position
+          positionGroups.forEach((positionCandidates, position) => {
+            const positionResults: Result[] = positionCandidates.map(candidate => {
+              // For exec events, we only count votes where vote_value = 'yes' (selections)
+              const candidateVotes = votes?.filter(vote => 
+                vote.candidate_id === candidate.id && vote.vote_value === 'yes'
+              ) || [];
+              
+              const opinionVotes = candidateVotes.filter(vote => vote.type === 'opinion');
+              const finalVotes = candidateVotes.filter(vote => vote.type === 'final');
+              
+              const opinionCount = opinionVotes.length;
+              const finalCount = finalVotes.length;
+              
+              // Calculate total votes for this position (for percentage calculation)
+              const positionTotalVotes = votes?.filter(vote => 
+                vote.position === position && vote.vote_value === 'yes'
+              ).length || 0;
+              
+              const finalPercentage = positionTotalVotes > 0 ? (finalCount / positionTotalVotes) * 100 : 0;
+              
+              console.log(`Candidate ${candidate.name} (${position}): opinion=${opinionCount}, final=${finalCount} (${finalPercentage.toFixed(1)}%)`);
+              
+              return {
+                candidate_id: candidate.id,
+                candidate_name: candidate.name,
+                position: position,
+                opinion_yes: opinionCount,
+                opinion_no: 0,
+                opinion_abstain: 0,
+                opinion_total: opinionCount,
+                final_yes: finalCount,
+                final_no: 0,
+                final_total: finalCount,
+                approved: false, // No approval logic for exec events
+                vote_count: finalCount,
+                vote_percentage: finalPercentage
+              };
+            });
+            
+            // Determine winner(s) for this position (highest vote count)
+            const maxVotes = Math.max(...positionResults.map(r => r.final_total));
+            positionResults.forEach(result => {
+              result.is_winner = result.final_total === maxVotes && maxVotes > 0;
+            });
+            
+            calculatedResults = calculatedResults.concat(positionResults);
+          });
+        } else {
+          // For member events, use existing calculation logic
+          calculatedResults = candidates.map(candidate => {
+            const candidateVotes = votes?.filter(vote => vote.candidate_id === candidate.id) || [];
+            
+            const opinionVotes = candidateVotes.filter(vote => vote.type === 'opinion');
+            const finalVotes = candidateVotes.filter(vote => vote.type === 'final');
 
-          const opinionYes = opinionVotes.filter(vote => vote.vote_value === 'yes').length;
-          const opinionNo = opinionVotes.filter(vote => vote.vote_value === 'no').length;
-          const opinionAbstain = opinionVotes.filter(vote => vote.vote_value === 'abstain').length;
-          const opinionTotal = opinionVotes.length;
+            const opinionYes = opinionVotes.filter(vote => vote.vote_value === 'yes').length;
+            const opinionNo = opinionVotes.filter(vote => vote.vote_value === 'no').length;
+            const opinionAbstain = opinionVotes.filter(vote => vote.vote_value === 'abstain').length;
+            const opinionTotal = opinionVotes.length;
 
-          const finalYes = finalVotes.filter(vote => vote.vote_value === 'yes').length;
-          const finalNo = finalVotes.filter(vote => vote.vote_value === 'no').length;
-          const finalTotal = finalVotes.length;
+            const finalYes = finalVotes.filter(vote => vote.vote_value === 'yes').length;
+            const finalNo = finalVotes.filter(vote => vote.vote_value === 'no').length;
+            const finalTotal = finalVotes.length;
 
-          const finalYesPercent = finalTotal > 0 ? (finalYes / finalTotal) * 100 : 0;
+            const finalYesPercent = finalTotal > 0 ? (finalYes / finalTotal) * 100 : 0;
 
-          // Determine if approved (for new member events)
-          const approved = eventData.type === 'member' && finalYesPercent >= approvalThreshold;
+            // Determine if approved (for new member events)
+            const approved = eventData.type === 'member' && finalYesPercent >= approvalThreshold;
 
-          console.log(`Candidate ${candidate.name}: opinion=${opinionTotal} (${opinionYes}Y/${opinionNo}N/${opinionAbstain}A), final=${finalTotal} (${finalYes}Y/${finalNo}N)`);
+            console.log(`Candidate ${candidate.name}: opinion=${opinionTotal} (${opinionYes}Y/${opinionNo}N/${opinionAbstain}A), final=${finalTotal} (${finalYes}Y/${finalNo}N)`);
 
-          return {
-            candidate_id: candidate.id,
-            candidate_name: candidate.name,
-            opinion_yes: opinionYes,
-            opinion_no: opinionNo,
-            opinion_abstain: opinionAbstain,
-            opinion_total: opinionTotal,
-            final_yes: finalYes,
-            final_no: finalNo,
-            final_total: finalTotal,
-            approved
-          };
-        });
+            return {
+              candidate_id: candidate.id,
+              candidate_name: candidate.name,
+              opinion_yes: opinionYes,
+              opinion_no: opinionNo,
+              opinion_abstain: opinionAbstain,
+              opinion_total: opinionTotal,
+              final_yes: finalYes,
+              final_no: finalNo,
+              final_total: finalTotal,
+              approved
+            };
+          });
+        }
 
         setCalculatedResults(calculatedResults);
         const approvedCount = calculatedResults.filter(r => r.approved).length;
@@ -301,46 +379,93 @@ export default function ResultsPage() {
       ]);
 
       // Data rows
-      calculatedResults.forEach((result) => {
-        const candidate = analytics.candidates.find(c => c.id === result.candidate_id);
-        const finalApprovalPercent = result.final_total > 0 ? 
-          ((result.final_yes / result.final_total) * 100).toFixed(1) : '0.0';
+      if (event.type === 'exec') {
+        // For exec events, group by position
+        const positionGroups = new Map<string, Result[]>();
+        calculatedResults.forEach(result => {
+          if (result.position) {
+            if (!positionGroups.has(result.position)) {
+              positionGroups.set(result.position, []);
+            }
+            positionGroups.get(result.position)!.push(result);
+          }
+        });
         
-        // Get voter names for final votes
-        const finalVoters = analytics.voterDetails
-          .filter(voter => 
-            voter.votes.find(v => 
-              v.candidate_id === result.candidate_id && v.vote_value === 'yes'
+        Array.from(positionGroups.entries()).forEach(([position, positionResults]) => {
+          positionResults.forEach((result) => {
+            const candidate = analytics.candidates.find(c => c.id === result.candidate_id);
+            const votePercent = result.vote_percentage !== undefined ? 
+              result.vote_percentage.toFixed(1) : '0.0';
+            
+            csvData.push([
+              event.event_name || 'Executive Committee',
+              event.type,
+              formatDate(event.date),
+              event.phase,
+              '', // No approval threshold for exec
+              candidate?.name || result.candidate_name,
+              '', // No major for exec
+              '', // No grad year for exec
+              candidate?.classification || '',
+              '', // No GPA for exec
+              position,
+              candidate?.resume_url || '',
+              result.opinion_total.toString(), // Opinion votes
+              '0', // No "no" votes for exec
+              '0', // No abstain for exec
+              result.opinion_total.toString(),
+              result.final_total.toString(), // Final votes
+              '0', // No "no" votes for exec
+              result.final_total.toString(),
+              votePercent,
+              result.is_winner ? 'Yes' : 'No', // Winner instead of approved
+              '' // No individual voter names for exec (anonymous)
+            ]);
+          });
+        });
+      } else {
+        // For member events, use existing logic
+        calculatedResults.forEach((result) => {
+          const candidate = analytics.candidates.find(c => c.id === result.candidate_id);
+          const finalApprovalPercent = result.final_total > 0 ? 
+            ((result.final_yes / result.final_total) * 100).toFixed(1) : '0.0';
+          
+          // Get voter names for final votes
+          const finalVoters = analytics.voterDetails
+            .filter(voter => 
+              voter.votes.find(v => 
+                v.candidate_id === result.candidate_id && v.vote_value === 'yes'
+              )
             )
-          )
-          .map(voter => voter.name)
-          .join('; ');
+            .map(voter => voter.name)
+            .join('; ');
 
-        csvData.push([
-          event.event_name || (event.type === 'member' ? 'New Member Voting' : 'Executive Committee'),
-          event.type,
-          formatDate(event.date),
-          event.phase,
-          approvalThreshold.toString(),
-          candidate?.name || result.candidate_name,
-          candidate?.major || '',
-          candidate?.grad_year || '',
-          candidate?.classification || '',
-          candidate?.gpa || '',
-          candidate?.position || '',
-          candidate?.resume_url || '',
-          result.opinion_yes.toString(),
-          result.opinion_no.toString(),
-          result.opinion_abstain.toString(),
-          result.opinion_total.toString(),
-          result.final_yes.toString(),
-          result.final_no.toString(),
-          result.final_total.toString(),
-          finalApprovalPercent,
-          result.approved ? 'Yes' : 'No',
-          finalVoters
-        ]);
-      });
+          csvData.push([
+            event.event_name || 'New Member Voting',
+            event.type,
+            formatDate(event.date),
+            event.phase,
+            approvalThreshold.toString(),
+            candidate?.name || result.candidate_name,
+            candidate?.major || '',
+            candidate?.grad_year || '',
+            candidate?.classification || '',
+            candidate?.gpa || '',
+            '', // No position for member
+            candidate?.resume_url || '',
+            result.opinion_yes.toString(),
+            result.opinion_no.toString(),
+            result.opinion_abstain.toString(),
+            result.opinion_total.toString(),
+            result.final_yes.toString(),
+            result.final_no.toString(),
+            result.final_total.toString(),
+            finalApprovalPercent,
+            result.approved ? 'Yes' : 'No',
+            finalVoters
+          ]);
+        });
+      }
 
       // Convert to CSV string
       const csvContent = csvData.map(row => 
@@ -936,8 +1061,165 @@ export default function ResultsPage() {
           Detailed Results
         </div>
         
-        <div className="stack-m">
-          {analytics.candidates.map((candidate, index) => {
+        {event.type === 'exec' ? (
+          // Executive Results: Grouped by Position
+          <div className="stack-l">
+            {(() => {
+              // Group results by position
+              const positionGroups = new Map<string, Result[]>();
+              calculatedResults.forEach(result => {
+                if (result.position) {
+                  if (!positionGroups.has(result.position)) {
+                    positionGroups.set(result.position, []);
+                  }
+                  positionGroups.get(result.position)!.push(result);
+                }
+              });
+              
+              return Array.from(positionGroups.entries()).map(([position, positionResults]) => {
+                // Sort by vote count (highest first)
+                const sortedResults = [...positionResults].sort((a, b) => 
+                  (b.vote_count || 0) - (a.vote_count || 0)
+                );
+                const maxVotes = Math.max(...positionResults.map(r => r.vote_count || 0));
+                
+                return (
+                  <div key={position} className="card" style={{ padding: '1.5rem', background: 'var(--bg-elev)', marginBottom: '1.5rem' }}>
+                    <div className="title" style={{ fontSize: '1.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      {position}
+                      {sortedResults.some(r => r.is_winner) && (
+                        <span style={{ 
+                          color: 'var(--brand)', 
+                          fontWeight: 'bold',
+                          padding: '0.25rem 0.75rem',
+                          border: '2px solid var(--brand)',
+                          borderRadius: '20px',
+                          fontSize: '0.8rem',
+                          background: 'rgba(139,92,246,0.1)'
+                        }}>
+                          Winner
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="stack-m">
+                      {sortedResults.map((result) => {
+                        const candidate = analytics.candidates.find(c => c.id === result.candidate_id);
+                        const isWinner = result.is_winner;
+                        
+                        return (
+                          <div key={result.candidate_id} className="card" style={{ 
+                            padding: '1.5rem', 
+                            background: 'var(--bg)',
+                            border: isWinner ? '2px solid var(--brand)' : '1px solid var(--border)',
+                            borderLeft: isWinner ? '4px solid var(--brand)' : undefined
+                          }}>
+                            <div className="row-m" style={{ alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+                              <div className="title" style={{ fontSize: '1.1rem', flex: 1 }}>
+                                {candidate?.name || result.candidate_name}
+                              </div>
+                              {isWinner && (
+                                <span style={{ 
+                                  color: 'var(--brand)', 
+                                  fontWeight: 'bold',
+                                  padding: '0.25rem 0.75rem',
+                                  border: '2px solid var(--brand)',
+                                  borderRadius: '20px',
+                                  fontSize: '0.8rem',
+                                  background: 'rgba(139,92,246,0.1)'
+                                }}>
+                                  ✓ WINNER
+                                </span>
+                              )}
+                            </div>
+                            
+                            {/* Candidate Info */}
+                            {(candidate?.image_url || candidate?.classification) && (
+                              <div className="row-m" style={{ gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                                {candidate?.image_url && (
+                                  <img
+                                    src={candidate.image_url}
+                                    alt={`${candidate.name} photo`}
+                                    style={{
+                                      width: '80px',
+                                      height: '80px',
+                                      objectFit: 'cover',
+                                      borderRadius: '8px',
+                                      border: '1px solid var(--border)'
+                                    }}
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                  />
+                                )}
+                                {candidate?.classification && (
+                                  <div style={{ color: 'var(--muted)' }}>
+                                    Classification: {candidate.classification}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            
+                            {/* Vote Results */}
+                            <div className="row-m" style={{ gap: '2rem', flexWrap: 'wrap' }}>
+                              {/* Opinion Poll */}
+                              <div style={{ flex: 1, minWidth: '200px' }}>
+                                <div style={{ fontSize: '0.9rem', color: 'var(--muted)', marginBottom: '0.5rem' }}>
+                                  Opinion Poll
+                                </div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--brand)' }}>
+                                  {result.opinion_total} votes
+                                </div>
+                              </div>
+                              
+                              {/* Final Vote */}
+                              <div style={{ flex: 1, minWidth: '200px' }}>
+                                <div style={{ fontSize: '0.9rem', color: 'var(--muted)', marginBottom: '0.5rem' }}>
+                                  Final Vote
+                                </div>
+                                <div className="row-m" style={{ alignItems: 'baseline', gap: '0.5rem' }}>
+                                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: isWinner ? 'var(--brand)' : 'var(--text)' }}>
+                                    {result.final_total} votes
+                                  </div>
+                                  {result.vote_percentage !== undefined && (
+                                    <div style={{ fontSize: '1rem', color: 'var(--muted)' }}>
+                                      ({result.vote_percentage.toFixed(1)}%)
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* Progress Bar */}
+                                {result.vote_percentage !== undefined && (
+                                  <div style={{ 
+                                    marginTop: '0.5rem',
+                                    height: '8px', 
+                                    backgroundColor: 'var(--bg-elev)', 
+                                    borderRadius: '4px',
+                                    overflow: 'hidden'
+                                  }}>
+                                    <div style={{ 
+                                      width: `${result.vote_percentage}%`, 
+                                      height: '100%', 
+                                      backgroundColor: isWinner ? 'var(--brand)' : 'var(--muted)',
+                                      transition: 'width 0.3s ease'
+                                    }} />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        ) : (
+          // Member Results: Existing display
+          <div className="stack-m">
+            {analytics.candidates.map((candidate, index) => {
             // Get the calculated results for this candidate
             const result = calculatedResults.find((r: Result) => r.candidate_id === candidate.id);
             console.log(`Rendering candidate ${candidate.name}, result:`, result);
@@ -1332,7 +1614,8 @@ export default function ResultsPage() {
               </div>
             );
           })}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
