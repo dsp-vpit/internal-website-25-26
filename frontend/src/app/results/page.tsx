@@ -165,34 +165,36 @@ export default function ResultsPage() {
           // Calculate results for each candidate within each position
           positionGroups.forEach((positionCandidates, position) => {
             const positionResults: Result[] = positionCandidates.map(candidate => {
-              // For exec events, we only count votes where vote_value = 'yes' (selections)
-              const candidateVotes = votes?.filter(vote => 
-                vote.candidate_id === candidate.id && vote.vote_value === 'yes'
+              // For exec events, we only count final votes (no opinion poll)
+              // Only count votes where vote_value = 'yes' (selections) and type = 'final'
+              const finalVotes = votes?.filter(vote => 
+                vote.candidate_id === candidate.id && 
+                vote.vote_value === 'yes' &&
+                vote.type === 'final'
               ) || [];
               
-              const opinionVotes = candidateVotes.filter(vote => vote.type === 'opinion');
-              const finalVotes = candidateVotes.filter(vote => vote.type === 'final');
-              
-              const opinionCount = opinionVotes.length;
               const finalCount = finalVotes.length;
               
               // Calculate total votes for this position (for percentage calculation)
+              // Only count final votes for this position
               const positionTotalVotes = votes?.filter(vote => 
-                vote.position === position && vote.vote_value === 'yes'
+                vote.position === position && 
+                vote.vote_value === 'yes' &&
+                vote.type === 'final'
               ).length || 0;
               
               const finalPercentage = positionTotalVotes > 0 ? (finalCount / positionTotalVotes) * 100 : 0;
               
-              console.log(`Candidate ${candidate.name} (${position}): opinion=${opinionCount}, final=${finalCount} (${finalPercentage.toFixed(1)}%)`);
+              console.log(`Candidate ${candidate.name} (${position}): final=${finalCount} (${finalPercentage.toFixed(1)}%)`);
               
               return {
                 candidate_id: candidate.id,
                 candidate_name: candidate.name,
                 position: position,
-                opinion_yes: opinionCount,
+                opinion_yes: 0, // No opinion poll for exec events
                 opinion_no: 0,
                 opinion_abstain: 0,
-                opinion_total: opinionCount,
+                opinion_total: 0,
                 final_yes: finalCount,
                 final_no: 0,
                 final_total: finalCount,
@@ -401,7 +403,7 @@ export default function ResultsPage() {
               event.event_name || 'Executive Committee',
               event.type,
               formatDate(event.date),
-              event.phase,
+              'final', // Exec events only have final vote
               '', // No approval threshold for exec
               candidate?.name || result.candidate_name,
               '', // No major for exec
@@ -410,10 +412,10 @@ export default function ResultsPage() {
               '', // No GPA for exec
               position,
               candidate?.resume_url || '',
-              result.opinion_total.toString(), // Opinion votes
+              '0', // No opinion poll for exec
               '0', // No "no" votes for exec
               '0', // No abstain for exec
-              result.opinion_total.toString(),
+              '0',
               result.final_total.toString(), // Final votes
               '0', // No "no" votes for exec
               result.final_total.toString(),
@@ -772,7 +774,7 @@ export default function ResultsPage() {
         
         <div className="row-m" style={{ color: 'var(--muted)' }}>
           <span className="mono">Date: {formatDate(event.date)}</span>
-          <span className="mono">Phase: {event.phase === 'opinion' ? 'Opinion Poll' : 'Final Vote'}</span>
+          <span className="mono">Phase: {event.type === 'exec' ? 'Final Vote' : (event.phase === 'opinion' ? 'Opinion Poll' : 'Final Vote')}</span>
           <span className="mono">Candidates: {analytics.totalCandidates}</span>
         </div>
         {user.is_admin && event.type === 'member' && (
@@ -1160,52 +1162,39 @@ export default function ResultsPage() {
                               </div>
                             )}
                             
-                            {/* Vote Results */}
-                            <div className="row-m" style={{ gap: '2rem', flexWrap: 'wrap' }}>
-                              {/* Opinion Poll */}
-                              <div style={{ flex: 1, minWidth: '200px' }}>
-                                <div style={{ fontSize: '0.9rem', color: 'var(--muted)', marginBottom: '0.5rem' }}>
-                                  Opinion Poll
-                                </div>
-                                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--brand)' }}>
-                                  {result.opinion_total} votes
-                                </div>
+                            {/* Vote Results - Only Final Vote for Exec Events */}
+                            <div style={{ minWidth: '200px' }}>
+                              <div style={{ fontSize: '0.9rem', color: 'var(--muted)', marginBottom: '0.5rem' }}>
+                                Final Vote
                               </div>
-                              
-                              {/* Final Vote */}
-                              <div style={{ flex: 1, minWidth: '200px' }}>
-                                <div style={{ fontSize: '0.9rem', color: 'var(--muted)', marginBottom: '0.5rem' }}>
-                                  Final Vote
+                              <div className="row-m" style={{ alignItems: 'baseline', gap: '0.5rem' }}>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: isWinner ? 'var(--brand)' : 'var(--text)' }}>
+                                  {result.final_total} votes
                                 </div>
-                                <div className="row-m" style={{ alignItems: 'baseline', gap: '0.5rem' }}>
-                                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: isWinner ? 'var(--brand)' : 'var(--text)' }}>
-                                    {result.final_total} votes
-                                  </div>
-                                  {result.vote_percentage !== undefined && (
-                                    <div style={{ fontSize: '1rem', color: 'var(--muted)' }}>
-                                      ({result.vote_percentage.toFixed(1)}%)
-                                    </div>
-                                  )}
-                                </div>
-                                
-                                {/* Progress Bar */}
                                 {result.vote_percentage !== undefined && (
-                                  <div style={{ 
-                                    marginTop: '0.5rem',
-                                    height: '8px', 
-                                    backgroundColor: 'var(--bg-elev)', 
-                                    borderRadius: '4px',
-                                    overflow: 'hidden'
-                                  }}>
-                                    <div style={{ 
-                                      width: `${result.vote_percentage}%`, 
-                                      height: '100%', 
-                                      backgroundColor: isWinner ? 'var(--brand)' : 'var(--muted)',
-                                      transition: 'width 0.3s ease'
-                                    }} />
+                                  <div style={{ fontSize: '1rem', color: 'var(--muted)' }}>
+                                    ({result.vote_percentage.toFixed(1)}%)
                                   </div>
                                 )}
                               </div>
+                              
+                              {/* Progress Bar */}
+                              {result.vote_percentage !== undefined && (
+                                <div style={{ 
+                                  marginTop: '0.5rem',
+                                  height: '8px', 
+                                  backgroundColor: 'var(--bg-elev)', 
+                                  borderRadius: '4px',
+                                  overflow: 'hidden'
+                                }}>
+                                  <div style={{ 
+                                    width: `${result.vote_percentage}%`, 
+                                    height: '100%', 
+                                    backgroundColor: isWinner ? 'var(--brand)' : 'var(--muted)',
+                                    transition: 'width 0.3s ease'
+                                  }} />
+                                </div>
+                              )}
                             </div>
                           </div>
                         );

@@ -89,7 +89,9 @@ export default function VotingPage() {
         }
 
         setEvent(eventData);
-        setPhase(eventData.phase || 'opinion');
+        // For exec events, always use 'final' phase (no opinion poll)
+        // For member events, use the event's phase
+        setPhase(eventData.type === 'exec' ? 'final' : (eventData.phase || 'opinion'));
         
         const { data: candData, error: candError } = await supabase
           .from('candidates')
@@ -152,15 +154,14 @@ export default function VotingPage() {
         if (!eventError && eventData) {
           let needsUpdate = false;
           
-          // For exec events, we don't check candidate index changes
-          // For member events, check if candidate index has changed
-          if (eventData.type === 'member' && eventData.current_candidate_index !== lastCandidateIndex) {
+          // Check if candidate index has changed (for both member and exec events)
+          if (eventData.current_candidate_index !== lastCandidateIndex) {
             console.log('Candidate index changed from', lastCandidateIndex, 'to', eventData.current_candidate_index);
             needsUpdate = true;
           }
           
-          // Check if phase has changed
-          if (eventData.phase !== phase) {
+          // Check if phase has changed (only for member events, exec always uses 'final')
+          if (eventData.type === 'member' && eventData.phase !== phase) {
             console.log('Phase changed from', phase, 'to', eventData.phase);
             needsUpdate = true;
           }
@@ -180,12 +181,20 @@ export default function VotingPage() {
               
               setCandidates(candData);
               setEvent(eventData);
-              setPhase(eventData.phase || 'opinion');
+              // For exec events, always use 'final' phase (no opinion poll)
+              // For member events, use the event's phase
+              setPhase(eventData.type === 'exec' ? 'final' : (eventData.phase || 'opinion'));
+              
+              // Update tracking variable
+              setLastCandidateIndex(eventData.current_candidate_index);
               
               // For exec events, we don't need to set current candidate
               // For member events, set the current candidate
               if (eventData.type === 'exec') {
                 setCandidate(null);
+                // For exec events, reset error/message when position changes
+                setMessage(null);
+                setError(null);
               } else {
                 console.log('Current candidate index:', eventData.current_candidate_index);
                 console.log('Available candidates:', candData.map((c, i) => `${i}: ${c.name}`));
@@ -194,7 +203,6 @@ export default function VotingPage() {
                   console.log('Setting new candidate:', newCurrentCandidate.name);
                   // Force re-render by creating a new object reference
                   setCandidate({ ...newCurrentCandidate });
-                  setLastCandidateIndex(eventData.current_candidate_index);
                   setHasVoted(false); // Reset vote status for new candidate
                   setMessage(null);
                   setError(null);

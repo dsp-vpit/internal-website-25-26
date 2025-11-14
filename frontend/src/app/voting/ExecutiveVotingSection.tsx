@@ -88,12 +88,13 @@ export default function ExecutiveVotingSection({
       if (!user || !event || !currentPositionGroup) return;
       
       try {
+        // For exec events, always use 'final' phase (no opinion poll)
         const { data: votes, error: votesError } = await supabase
           .from('votes')
           .select('candidate_id, position')
           .eq('user_id', user.id)
           .eq('event_id', event.id)
-          .eq('type', event.phase)
+          .eq('type', 'final')
           .eq('position', currentPositionGroup.position);
         
         if (votesError) {
@@ -115,13 +116,17 @@ export default function ExecutiveVotingSection({
           }
           return newMap;
         });
+        
+        // Clear error/message when position changes
+        setError(null);
+        setMessage(null);
       } catch (err) {
         console.error('Error checking vote status:', err);
       }
     };
     
     checkExistingVotes();
-  }, [user, event?.id, event?.phase, currentPositionGroup?.position]);
+  }, [user, event?.id, currentPositionGroup?.position]);
 
   const handleCandidateSelect = (candidateId: string) => {
     if (!currentPositionGroup) return;
@@ -151,21 +156,21 @@ export default function ExecutiveVotingSection({
     setError(null);
 
     try {
-      // Delete any existing votes for this position in this phase
+      // Delete any existing votes for this position (exec events only use 'final' phase)
       await supabase
         .from('votes')
         .delete()
         .eq('user_id', user.id)
         .eq('event_id', event.id)
-        .eq('type', event.phase)
+        .eq('type', 'final')
         .eq('position', currentPositionGroup.position);
       
-      // Insert new vote
+      // Insert new vote (always 'final' phase for exec events)
       const voteData = {
         user_id: user.id,
         event_id: event.id,
         candidate_id: selectedCandidateId,
-        type: event.phase,
+        type: 'final' as const,
         vote_value: 'yes' as const,
         is_anonymous: true,
         position: currentPositionGroup.position
@@ -208,7 +213,7 @@ export default function ExecutiveVotingSection({
         </div>
         <div className="row-m" style={{ color: 'var(--muted)' }}>
           <span className="mono">Date: {formatDate(event.date)}</span>
-          <span className="mono">Phase: {event.phase === 'opinion' ? 'Opinion Poll' : 'Final Vote'}</span>
+          <span className="mono">Phase: Final Vote</span>
         </div>
       </div>
 
@@ -221,9 +226,7 @@ export default function ExecutiveVotingSection({
                 Position {positionGroups.findIndex(g => g.position === currentPositionGroup.position) + 1} of {positionGroups.length}
               </p>
               <p style={{ fontSize: '0.9rem' }}>
-                {event.phase === 'opinion' 
-                  ? 'Opinion polls are anonymous and help assess initial sentiment.'
-                  : 'Your vote will be recorded anonymously.'}
+                Your vote will be recorded anonymously.
               </p>
             </div>
           </div>
