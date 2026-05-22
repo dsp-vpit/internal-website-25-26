@@ -25,12 +25,8 @@ export default function DashboardPage() {
     }
   }, [user, loading, router]);
 
-  const handleIndustryGuides = () => {
-    window.open('https://drive.google.com/drive/folders/1JbfALp53yAfbDxGMSH63SpeT66W6R2Lx?usp=sharing', '_blank');
-  };
-
-  const handleResumeCoverLetter = () => {
-    window.open('https://drive.google.com/drive/folders/1ReIcCGd6vwpk8sMyMRS9XTdt5YRiLdS3?usp=sharing', '_blank');
+  const handleVPPAGuide = () => {
+    window.open('http://bkbp-professionalhub.netlify.app/', '_blank');
   };
 
   const handleScholarshipTracker = () => {
@@ -147,16 +143,16 @@ export default function DashboardPage() {
                 padding: '1rem'
               }}>
                 <div className="stack-s" style={{ gap: '0.75rem' }}>
-                  <div 
-                    className="card" 
-                    style={{ 
+                  <div
+                    className="card"
+                    style={{
                       padding: '1rem',
                       cursor: 'pointer',
                       background: 'var(--bg)',
                       border: '1px solid var(--border)',
                       transition: 'all 0.2s ease'
                     }}
-                    onClick={handleIndustryGuides}
+                    onClick={handleVPPAGuide}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.background = 'var(--bg-elev)';
                       e.currentTarget.style.borderColor = 'var(--accent)';
@@ -167,37 +163,10 @@ export default function DashboardPage() {
                     }}
                   >
                     <div className="title" style={{ fontSize: '1.1rem', marginBottom: '0.25rem' }}>
-                      Industry Guides
+                      Comprehensive VPPA Guide
                     </div>
                     <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--muted)' }}>
-                      Consulting, Investment Banking, Marketing, and more
-                    </p>
-                  </div>
-                  
-                  <div 
-                    className="card" 
-                    style={{ 
-                      padding: '1rem',
-                      cursor: 'pointer',
-                      background: 'var(--bg)',
-                      border: '1px solid var(--border)',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onClick={handleResumeCoverLetter}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'var(--bg-elev)';
-                      e.currentTarget.style.borderColor = 'var(--accent)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'var(--bg)';
-                      e.currentTarget.style.borderColor = 'var(--border)';
-                    }}
-                  >
-                    <div className="title" style={{ fontSize: '1.1rem', marginBottom: '0.25rem' }}>
-                      Resume & Cover Letter
-                    </div>
-                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--muted)' }}>
-                      Templates, tips, and examples for job applications
+                      Industry guides, resume & cover letter resources, and more
                     </p>
                   </div>
                 </div>
